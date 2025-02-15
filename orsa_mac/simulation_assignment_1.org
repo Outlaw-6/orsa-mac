@@ -1,0 +1,143 @@
+#+title: Simulation Assignment 1
+#+author: Luke Miller
+* Introduction
+:PROPERTIES:
+:ID:       9c0f901f-dfce-4114-b1a9-904ec024d524
+:END:
+This is an individual assignment. You may discuss this with your classmates, but
+you are not allowed to look at or copy someone else's work. There are three
+separate assignments, each requiring a separate simulation. You are to build the
+simulation, run the simulation /at least/ 100 times and *provide one paragraph
+as a response* (graphs and charts are always appreciated.) You are to turn your
+final submission to me in the Assignment 1 folder located in Simulation
+Assignments Submissions folder.
+
+* Fire Fighter Response Time
+:PROPERTIES:
+:ID:       47985821-590e-4b05-9b19-6cc8266ef5ce
+:END:
+** Prompt
+:PROPERTIES:
+:ID:       f5147060-bc4b-48b6-9729-b5da8fefd587
+:END:
+Build a simulation of the firefighter problem we did in class. You can use
+either an Excel Spreadsheet or R. Conduct 100 repetitions of the simulation and
+answer the following questions:
+
+1. What is the average response time?
+2. What was your greatest response time?
+3. What is the minimum response time?
+
+** Simulation
+:PROPERTIES:
+:ID:       be0f664d-4c8a-45b5-b51f-58d238c99688
+:END:
+For this simulation, I am going to construct an empirical CDF by sorting the
+observations then converting each step of observations into a line segment.
+This will allow me to build a piecewise CDF across \([0-1]\) which I can then
+solve for x in terms of R.
+
+I will build this simulation in R.
+
+#+name: ff_sim
+#+begin_src R :var it=100000 :session
+response_data <- c(2.76, 1.83, 0.80, 1.45, 1.24)
+
+fire_fighter_response_simulator <- function(observed_times, it) {
+
+                                        # Validate Input
+  if (!is.vector(observed_times) | !is.numeric(observed_times[1])) {
+    stop("Please input a vector of observations of Firefighter Response Time.")
+  }
+  if (!is.numeric(it) | it < 1) {
+    stop("Iterations must be >= 1.")
+  }
+
+  x <- sort(observed_times)
+  n <- length(x)
+  diffs <- c(x[1], x[-1]-x[-n])
+  m <- (1/n)/diffs
+  y <- seq(1/n,1,1/n)
+  b <- y-m*x
+
+
+  rolls <- runif(it)
+  times <- NULL
+  for (i in 1:it) {
+    times[i] <- (rolls[i]-b[ceiling(n*rolls[i])])/m[ceiling(n*rolls[i])]
+  }
+
+  return(list(times = times,
+              mean = mean(times),
+              max = max(times),
+              min = min(times)))
+}
+
+set.seed(123)
+sim <- fire_fighter_response_simulator(response_data, it)
+c(sim$mean,sim$max,sim$min)
+#+end_src
+
+#+RESULTS: ff_sim
+|     1.33881061031184 |
+|     2.75996420826064 |
+| 7.28219747543335e-05 |
+
+** Results
+:PROPERTIES:
+:ID:       bcb6f4ec-a964-4b7f-9823-85d7dab20add
+:END:
+Using the empirical CDF by transforming observed times into points into slopes
+and feeding back into a piecewise function \(f(x) = \frac{R-b}{m}\) seems to
+give a distribution that matches the underlying distribution of the sample data.
+The more and better observations fed into it, the better the approximation gets
+to the underlying data. For the five observations we were presented in class,
+100,000 iterations of the simulation produced a max time of 2.75 minutes (0.01
+minutes off from the max observed time of 2.76), a min time of
+\(7.28\times10^{-5}\), and a mean of 1.34. As shown in the histogram below, the
+data approximates a symmetric distribution.
+
+#+begin_src R :file firestation_sim.png :session :results output graphics file
+library(ggplot2)
+
+as.data.frame(sim) |>
+  ggplot(aes(x = times)) +
+  geom_histogram(binwidth = 0.2) +
+  geom_freqpoly()
+#+end_src
+
+#+RESULTS:
+[[file:firestation_sim.png]]
+
+
+* ID Card Office
+:PROPERTIES:
+:ID:       b9e69e84-ea92-47cb-960e-d5c1a769108f
+:END:
+** Prompt
+:PROPERTIES:
+:ID:       b053e0af-2e00-421a-889f-af0ae7530445
+:END:
+The Fort Gregg-Adams ID Card Office has had to reduce staff to one employee and
+want to know how this impacts operations. Customers arrive at the office at a
+rate of 4 jobs per hour (Poisson) and the clerk can serve 5 customers per hour
+(Poisson).
+
+Build a discrete event simulation to model 8 hours' worth of the operation. You
+can use an Excel spreadsheet, or R.
+
+Provide the longest time a customer was in the system and the server utilization
+rate.
+
+** Simulation
+:PROPERTIES:
+:ID:       3854459f-52d9-44b8-b011-0d86acaf9426
+:END:
+I can model the arrival times to the ID card office with an exponential distribution solved for \(x\) in terms of \(R\): \(x=\frac{-ln(R)}{\lambda}\).
+
+This is very similar to what we did in class with the coffee shop.
+
+#+name: id_sim
+#+begin_src R :session
+
+#+end_src
