@@ -156,8 +156,6 @@ beta_service <- 1/lambda_service
 
 service_times <- -log(service_rolls)/lambda_service
 
-arrival_time <- -log(runif(1))/lambda_arrivals
-id_sim_data <-
 while(arrival_time < 480) {
 
 }
