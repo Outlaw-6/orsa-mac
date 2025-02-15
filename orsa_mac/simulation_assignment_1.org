@@ -140,6 +140,7 @@ This is very similar to what we did in class with the coffee shop.
 
 #+name: id_sim
 #+begin_src R :session
+set.seed(123)
 n <- 100
 mins <- 480
 
@@ -161,6 +162,17 @@ for (i in 1:n) {
   time_in_queue[i] <- begin_service_clock[i]-arrival_clock[i]
   clerk_idle_time[i] <- begin_service_clock[i] - if(is.null(depart_clock)){0} else {depart_clock[i-1]}
   depart_clock[i] <- begin_service_clock[i] + service_times[i]
-  if(arrival_clock[i] > mins) {break}
+  if(depart_clock[i] > mins) {break}
 }
+clerk_utilization_rate <- sum(clerk_idle_time)/mins
+list(clerk_utilization_rate = clerk_utilization_rate,
+     max_time_in_queue = max(time_in_queue))
 #+end_src
+
+#+RESULTS: id_sim
+| 0.294863193370666 | 72.8277499864645 |
+
+** Results
+:PROPERTIES:
+:ID:       9d071dcc-c17a-47ca-8a56-6c15e09601a7
+:END:
