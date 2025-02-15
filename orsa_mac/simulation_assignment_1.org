@@ -97,6 +97,7 @@ minutes off from the max observed time of 2.76), a min time of
 \(7.28\times10^{-5}\), and a mean of 1.34. As shown in the histogram below, the
 data approximates a symmetric distribution.
 
+#+name: plot_ff_sim
 #+begin_src R :file firestation_sim.png :session :results output graphics file
 library(ggplot2)
 
@@ -140,4 +141,18 @@ This is very similar to what we did in class with the coffee shop.
 #+name: id_sim
 #+begin_src R :session
 
+n <- 10
+
+arrival_rolls <- runif(n)
+lambda_arrivals <- 1/15
+beta_arrivals <- 1/lambda_arrivals
+
+time_between_arrivals <- -log(arrival_rolls)/lambda_arrivals
+arrival_clock <- cumsum(time_between_arrivals)
+
+service_rolls <- runif(n)
+lambda_service <- 1/12
+beta_service <- 1/lambda_service
+
+service_times <- -log(service_rolls)/lambda_service
 #+end_src
