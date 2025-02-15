@@ -41,7 +41,7 @@ I will build this simulation in R.
 
 #+name: ff_sim
 #+begin_src R :var it=100000 :session
-response_data <- c(2.76, 1.83, 0.80, 1.45, 1.24)
+ff_response_data <- c(2.76, 1.83, 0.80, 1.45, 1.24)
 
 fire_fighter_response_simulator <- function(observed_times, it) {
 
@@ -74,8 +74,8 @@ fire_fighter_response_simulator <- function(observed_times, it) {
 }
 
 set.seed(123)
-sim <- fire_fighter_response_simulator(response_data, it)
-c(sim$mean,sim$max,sim$min)
+ff_sim <- fire_fighter_response_simulator(ff_response_data, it)
+c(ff_sim$mean,ff_sim$max,ff_sim$min)
 #+end_src
 
 #+RESULTS: ff_sim
@@ -101,13 +101,13 @@ data approximates a symmetric distribution.
 #+begin_src R :file firestation_sim.png :session :results output graphics file
 library(ggplot2)
 
-as.data.frame(sim) |>
+as.data.frame(ff_sim) |>
   ggplot(aes(x = times)) +
   geom_histogram(binwidth = 0.2) +
   geom_freqpoly()
 #+end_src
 
-#+RESULTS:
+#+RESULTS: plot_ff_sim
 [[file:firestation_sim.png]]
 
 
@@ -140,8 +140,8 @@ This is very similar to what we did in class with the coffee shop.
 
 #+name: id_sim
 #+begin_src R :session
-
-n <- 10
+library(dplyr)
+n <- 100
 
 arrival_rolls <- runif(n)
 lambda_arrivals <- 1/15
@@ -155,4 +155,10 @@ lambda_service <- 1/12
 beta_service <- 1/lambda_service
 
 service_times <- -log(service_rolls)/lambda_service
+
+arrival_time <- -log(runif(1))/lambda_arrivals
+id_sim_data <-
+while(arrival_time < 480) {
+
+}
 #+end_src
