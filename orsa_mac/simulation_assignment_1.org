@@ -140,23 +140,27 @@ This is very similar to what we did in class with the coffee shop.
 
 #+name: id_sim
 #+begin_src R :session
-library(dplyr)
 n <- 100
+mins <- 480
 
 arrival_rolls <- runif(n)
 lambda_arrivals <- 1/15
-beta_arrivals <- 1/lambda_arrivals
-
 time_between_arrivals <- -log(arrival_rolls)/lambda_arrivals
 arrival_clock <- cumsum(time_between_arrivals)
 
 service_rolls <- runif(n)
 lambda_service <- 1/12
-beta_service <- 1/lambda_service
-
 service_times <- -log(service_rolls)/lambda_service
 
-while(arrival_time < 480) {
-
+depart_clock <- NULL
+begin_service_clock <- NULL
+time_in_queue <- NULL
+clerk_idle_time <- NULL
+for (i in 1:n) {
+  begin_service_clock[i] <- max(arrival_clock[i],depart_clock[i-1])
+  time_in_queue[i] <- begin_service_clock[i]-arrival_clock[i]
+  clerk_idle_time[i] <- begin_service_clock[i] - if(is.null(depart_clock)){0} else {depart_clock[i-1]}
+  depart_clock[i] <- begin_service_clock[i] + service_times[i]
+  if(arrival_clock[i] > mins) {break}
 }
 #+end_src
