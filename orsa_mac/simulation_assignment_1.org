@@ -1,5 +1,8 @@
 #+title: Simulation Assignment 1
 #+author: Luke Miller
+:PROPERTIES:
+:header-args:R: :session :dir ~/projects/orsa-mac/orsa_mac/
+:END:
 * Introduction
 :PROPERTIES:
 :ID:       9c0f901f-dfce-4114-b1a9-904ec024d524
@@ -98,7 +101,8 @@ minutes off from the max observed time of 2.76), a min time of
 data approximates a symmetric distribution.
 
 #+name: plot_ff_sim
-#+begin_src R :file firestation_sim.png :session :results output graphics file
+#+header: :file ./firestation_sim.png
+#+begin_src R :session :results output graphics file
 library(ggplot2)
 
 as.data.frame(ff_sim) |>
@@ -108,7 +112,7 @@ as.data.frame(ff_sim) |>
 #+end_src
 
 #+RESULTS: plot_ff_sim
-[[file:firestation_sim.png]]
+[[file:./firestation_sim.png]]
 
 
 * ID Card Office
