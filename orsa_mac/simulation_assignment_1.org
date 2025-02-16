@@ -245,3 +245,42 @@ jamming.
   1. On average, how many missiles will we need to launch for success against the enemy's munitions plant?
   2. What is the greatest number of missiles we might use and what is the least we might use?
   3. What is the probability we can get the job done with exactly 19 missiles?
+
+#+begin_export ascii
+
+   +-------------------+          /------------------\
+   | For (i in 1:Runs) +-------->/ Initial Conditions \-----+
+   +-------------------+         \ (i.e. missile = 1) /     |
+             ^                    \------------------/      |
+             |                                              |
+             |             +--------------------------------+
+             |             |  +-------------------+     /-----------------\
+             |     +-------+->| While (hits < 19) |--> / Determine Flight  \
+             |     |          +-------------------+    \    time and       /-+
+             |     |                                    \  #attempts      /  |
+             |     |                                     -----------------   |
+             |     |                    +------------------------------------+
+             |     |                    v
+             |     |         +-----------------------+   /---------------\
+             |     |  +----->| For (j in 1:attempts) |->/ Sample success  \
+             |     |  |      +-----------------------+  \  of missile cm  /-+
+             |     |  |                                  \---------------/  |
+             |     |  |attempts remain                                      |
+             |     |  |      +-----------------------+-------------------+--+
+             |     |  |      |                       |break              |break
+             |     |  |      v                       v                   v
+             |     |  |  +---------+            +---------+         +---------+
+             |     |  +--+ Great   |            |  Some   |         |   No    |
+             |     |     | Success |            | Success |         | Success |
+             |     |     +---+-----+            +----+----+         +----+----+
+             |     |         |final attempt          |75%                |0%
+             |     |         +-----------------------+-------------------+
+             |     |           95%                   |
+             |     |    if hit, hits += 1            v
+             |     |    missile += 1           +------------+
+             |     +---------------------------+ Hit / Miss |
+             |                                 +-----+------+
+             |  Record missiles used and run again   |
+             +---------------------------------------+
+
+#+end_export
