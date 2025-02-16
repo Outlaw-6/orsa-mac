@@ -284,3 +284,25 @@ jamming.
              +---------------------------------------+
 
 #+end_export
+** Simulation
+:PROPERTIES:
+:ID:       089933e0-a322-4dce-ae99-7cb9cf15a62e
+:END:
+
+#+name: missile_sim
+#+begin_src R :session :var runs=100
+library(dplyr)
+                                        # Initialize Out of Run Variables
+missiles_by_run <- NULL
+flight_time_beta <- 90
+flight_time_lambda <- 1/flight_time_beta
+hits_required <- 19
+
+                                        # Put a for loop here
+                                        # Initialize Run Variables
+missiles_shot <- 0
+hits <- 0
+while(hits < hits_required) {
+
+}
+#+end_src
