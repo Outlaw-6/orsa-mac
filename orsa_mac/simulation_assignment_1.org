@@ -291,18 +291,39 @@ jamming.
 
 #+name: missile_sim
 #+begin_src R :session :var runs=100
-library(dplyr)
                                         # Initialize Out of Run Variables
 missiles_by_run <- NULL
 flight_time_beta <- 90
 flight_time_lambda <- 1/flight_time_beta
+time_per_attempt <- 60
 hits_required <- 19
+great_success <- 0.12
+some_success <- 0.64 + great_success
+great_success_hit_chance <- 0.95
+some_success_hit_chance <- 0.75
 
                                         # Put a for loop here
                                         # Initialize Run Variables
 missiles_shot <- 0
 hits <- 0
 while(hits < hits_required) {
-
+  flight_time <- -log(runif(1))/flight_time_lambda
+  attempts <- ceiling(flight_time/time_per_attempt)
+  hit_chance <- 0
+  for (j in 1:attempts) {
+    cm_roll <- runif(1)
+    if (cm_roll < great_success) {
+      hit_chance <- great_success_hit_chance
+    } else if (cm_roll < some_success) {
+      hit_chance <- some_success_hit_chance
+      break
+    } else {
+      break
+    }
+  }
+  to_hit_roll <- runif(1)
+  if (to_hit_roll < hit_chance) {hits <- hits + 1}
+  missiles_shot <- missiles_shot + 1
 }
+missiles_shot
 #+end_src
