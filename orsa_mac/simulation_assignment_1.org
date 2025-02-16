@@ -180,3 +180,27 @@ list(clerk_utilization_rate = clerk_utilization_rate,
 :PROPERTIES:
 :ID:       9d071dcc-c17a-47ca-8a56-6c15e09601a7
 :END:
+I set the seed to 123 for reproducibility, and ran the sim until the first customer departure time was above eight hours, representing the last customer of the day. Through that time, the clerk was idle 29.49% of the time, and the maximum time a customer was in the queue was 72.83 minutes. The histogram below shows customer time spent in the queue.
+
+#+name: plot_id_sim
+#+header: :file ./id_sim.png
+#+begin_src R :session :results output graphics file
+library(ggplot2)
+
+custs <- length(depart_clock)
+
+id_sim_df <- data.frame(interarrival_times = time_between_arrivals[1:custs],
+                        arrival_clock = arrival_clock[1:custs],
+                        service_times = service_times[1:custs],
+                        time_in_queue = time_in_queue)
+
+id_sim_df |>
+  ggplot(aes(x = time_in_queue)) +
+  geom_histogram()
+#+end_src
+
+#+RESULTS: plot_id_sim
+[[file:./id_sim.png]]
+
+#+RESULTS:
+: 0.294863193370666
