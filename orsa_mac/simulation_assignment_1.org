@@ -204,3 +204,44 @@ id_sim_df |>
 
 #+RESULTS:
 : 0.294863193370666
+
+* Jamming Missiles
+:PROPERTIES:
+:ID:       a894715c-30d7-4a08-9488-17837daff681
+:END:
+** Prompt
+:PROPERTIES:
+:ID:       9c721267-8e51-4a73-ba05-b7d47cb3b223
+:END:
+The enemy has a new GPS jamming device used to misdirect US Missiles after
+launch. However, our missiles have built in countermeasures. The missile also
+has a back-up guidance system that is less accurate, but unaffected by the
+jamming.
+
+- Missile flight time to target is exponentially distributed with a mean of 90
+  seconds.
+- For every 60 seconds of flight time, the enemy gets a chance to jam the
+  missile and the missile's countermeasure gets an attempt to counter the
+  jamming: 1 attempt for 0-60 seconds, 2 attempts for 61-120 seconds, etc.
+- Success of our countermeasures are as follows: 12% great success, 64% some
+  success, and 24% no success.
+- From the missile's countermeasure perspective:
+  - Great success means the original guidance system is still intact and the
+    missile has a 95% chance of success.
+  - Some success means the missile lost it's GPS guided ability and is forced to
+    use inertial guidance which results in a 25% chance of failure for the
+    missile.
+  - No success results in the missile being totally jammed and the missile
+    self-destructs with 0% chance to hit the target.
+- Once a missile switches to inertial guidance, the enemy jammer no longer
+  influences the missile. For example, a missile's flight time is 70 seconds, so
+  the enemy gets 2 attempts to jam the missile, but the first attempt is met
+  with "Some Success" from the missile's countermeasure, so now the missile has
+  a 25% chance of failure to hit and the enemy doesn't get the second
+  opportunity to defeat the missile.
+
+  Current intelligence estimated it will require 19 successful missile strikes to destroy the enemy's munitions factory. You are to build a simulation model in Excel or R that represents the above scenario and answer the following questions:
+
+  1. On average, how many missiles will we need to launch for success against the enemy's munitions plant?
+  2. What is the greatest number of missiles we might use and what is the least we might use?
+  3. What is the probability we can get the job done with exactly 19 missiles?
