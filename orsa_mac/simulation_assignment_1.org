@@ -240,11 +240,17 @@ jamming.
   a 25% chance of failure to hit and the enemy doesn't get the second
   opportunity to defeat the missile.
 
-  Current intelligence estimated it will require 19 successful missile strikes to destroy the enemy's munitions factory. You are to build a simulation model in Excel or R that represents the above scenario and answer the following questions:
+  Current intelligence estimated it will require 19 successful missile strikes
+  to destroy the enemy's munitions factory. You are to build a simulation model
+  in Excel or R that represents the above scenario and answer the following
+  questions:
 
-  1. On average, how many missiles will we need to launch for success against the enemy's munitions plant?
-  2. What is the greatest number of missiles we might use and what is the least we might use?
+  1. On average, how many missiles will we need to launch for success against
+     the enemy's munitions plant?
+  2. What is the greatest number of missiles we might use and what is the least
+     we might use?
   3. What is the probability we can get the job done with exactly 19 missiles?
+
 
 #+begin_export ascii
 
@@ -343,7 +349,11 @@ data.frame(mean = mean(missiles_by_run),
 :PROPERTIES:
 :ID:       26a83cd5-ed92-4d4d-adc5-464d54568200
 :END:
-Our missile countermeasures are moderately effective, but currently we should expect to have to shoot 33 missiles on average to destroy the enemy munitions plant. In our most successful attempt, we were able to destroy it with only the absolute minimum of 19 missiles, while our least took 59. The odds of taking only 19 missiles are 1 in 20,000. A histogram of all attempts is below.
+Our missile countermeasures are moderately effective, but currently we should
+expect to have to shoot 33 missiles on average to destroy the enemy munitions
+plant. In our most successful attempt, we were able to destroy it with only the
+absolute minimum of 19 missiles, while our least took 59. The odds of taking
+only 19 missiles are 1 in 20,000. A histogram of all attempts is below.
 
 #+name: plot_missile_sim
 #+header: :file ./missile_sim.png
