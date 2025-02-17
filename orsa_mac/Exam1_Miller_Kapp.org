@@ -1,0 +1,118 @@
+#+title: Math Programming Exam 1 Take-Home
+#+author: Luke Miller and Nathanael Kapp
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [letter]
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+#+LATEX_COMPILER: lualatex
+#+OPTIONS: toc:nil
+
+* Algebraic Formulation
+:PROPERTIES:
+:ID:       7b6ec1d6-81dc-4a95-beee-95a7220e792b
+:END:
+** Decision Variables
+:PROPERTIES:
+:ID:       35d86b1c-77fc-4095-a691-2d6bb52feb12
+:END:
+1. $T_1L_i$: Turns of Truck Type 1 (34 Ton Capacity) to Ft. Liberty for Week $i \in \{1,2,\dots,4\}$
+2. $T_2L_i$: Turns of Truck Type 2 (18 Ton Capacity) to Ft. Liberty for Week $i \in \{1,2,\dots,4\}$
+3. $T_3L_i$: Turns of Truck Type 3 (11 Ton Capacity) to Ft. Liberty for Week $i \in \{1,2,\dots,4\}$
+4. $T_1J_i$: Turns of Truck Type 1 (34 Ton Capacity) to Ft. Jackson for Week $i \in \{1,2,\dots,4\}$
+5. $T_2J_i$: Turns of Truck Type 2 (18 Ton Capacity) to Ft. Jackson for Week $i \in \{1,2,\dots,4\}$
+6. $T_3J_i$: Turns of Truck Type 3 (11 Ton Capacity) to Ft. Jackson for Week $i \in \{1,2,\dots,4\}$
+7. $I_i$: Tons of Supplies Held for the next Week for Week $i \in \{1,2,...,4\}$
+** Objective
+:PROPERTIES:
+:ID:       2c3f8f75-225e-4ad2-90a6-86811f26f28e
+:END:
+Minimize Cost. Objective Function:
+$z = \displaystyle\sum_{i=1}^{4} 360 T_{1}L_{i} + 240 T_{2}L_{i} + 195 T_{3}L_{i} + 600 T_{1}J_{i} + 390 T_{2}J_{i} + 330 T_{3}J_{i}$
+
+** Constraints
+:PROPERTIES:
+:ID:       6dd5188e-4adb-4fcd-bb88-6cfceefb7601
+:END:
+1. $T_{1}L_{i} + T_{1}J_{i} \leq 20\ \forall\ i \in \{1,2,\dots,4\}$: Total
+   available turns per week of Truck Type 1
+2. $T_{2}L_{i} + T_{2}J_{i} \leq 30\ \forall\ i \in \{1,2,\dots,4\}$: Total
+   available turns per week of Truck Type 2
+3. $T_{3}L_{i} + T_{3}J_{i} \leq 24\ \forall\ i \in \{1,2,\dots,4\}$: Total
+   available turns per week of Truck Type 3
+4. $34T_{1}L_{1} + 18T_{2}L_{1} + 11T_{3}L_{1} \leq 700$: Supplies available
+   from Ft. Liberty Week 1 (Tons)
+5. $34T_{1}L_{2} + 18T_{2}L_{2} + 11T_{3}L_{2} \leq 600$: Supplies available
+   from Ft. Liberty Week 2 (Tons)
+6. $34T_{1}L_{3} + 18T_{2}L_{3} + 11T_{3}L_{3} \leq 500$: Supplies available
+   from Ft. Liberty Week 3 (Tons)
+7. $34T_{1}L_{4} + 18T_{2}L_{4} + 11T_{3}L_{4} \leq 600$: Supplies available
+   from Ft. Liberty Week 4 (Tons)
+8. $34T_{1}J_{1} + 18T_{2}J_{1} + 11T_{3}J_{1} \leq 600$: Supplies available
+   from Ft. Jackson Week 1 (Tons)
+9. $34T_{1}J_{2} + 18T_{2}J_{2} + 11T_{3}J_{2} \leq 800$: Supplies available
+   from Ft. Jackson Week 2 (Tons)
+10. $34T_{1}J_{3} + 18T_{2}J_{3} + 11T_{3}J_{3} \leq 400$: Supplies available
+    from Ft. Jackson Week 3 (Tons)
+11. $34T_{1}J_{4} + 18T_{2}J_{4} + 11T_{3}J_{4} \leq 500$: Supplies available
+    from Ft. Jackson Week 4 (Tons)
+12. $34(T_{1}L_{1} + T_{1}J_{1}) + 18(T_{2}L_{1} + T_{2}J_{1}) +11(T_{3}L_{1} + T_{3}J_{1}) + I_{0}-I_{1} \geq 1000$: Supplies for Week 1 (Tons)
+13. $34(T_{1}L_{2} + T_{1}J_{2}) + 18(T_{2}L_{2} + T_{2}J_{2}) +11(T_{3}L_{2} + T_{3}J_{2}) + I_{1}-I_{2} \geq 1200$: Supplies for Week 2 (Tons)
+14. $34(T_{1}L_{3} + T_{1}J_{3}) + 18(T_{2}L_{3} + T_{2}J_{3}) +11(T_{3}L_{3} + T_{3}J_{3}) + I_{2}-I_{3} \geq 1200$: Supplies for Week 3 (Tons)
+15. $34(T_{1}L_{4} + T_{1}J_{4}) + 18(T_{2}L_{4} + T_{2}J_{4}) +11(T_{3}L_{4} + T_{3}J_{4}) + I_{3}-I_{4} \geq 1000$: Supplies for Week 4 (Tons)
+16. $I_{i} \leq 300\ \forall\ i \in \{1,2,\dots\,4\}$: Maximum amount of Supplies that can be held over for the next week (Tons)
+17. $T_{j}L_{i}, T_{j}J_{i}, I_{i} \geq 0\ \forall\ i \in \{1,2,\dots,4\}, j \in \{1,2,3\}$: Non-negativity
+* Report:
+:PROPERTIES:
+:ID:       eca6d2ea-20f5-4bf6-bf98-38b44528858c
+:END:
+** Minimum Cost Solution
+:PROPERTIES:
+:ID:       76ecd48c-6bd1-4217-ad41-941bdc566c58
+:END:
+The table below shows the truck allocation that will minimize the cost to supply
+these training events.
+|------------+-------------------+--------+--------+--------+--------|
+| Truck Type | Truck Destination | Week 1 | Week 2 | Week 3 | Week 4 |
+|------------+-------------------+--------+--------+--------+--------|
+| 34 Tons    | Ft. Liberty       |      5 |      0 |     11 |      8 |
+| 18 Tons    | Ft. Liberty       |     27 |     29 |      7 |     18 |
+| 11 Tons    | Ft. Liberty       |      4 |      7 |      0 |      0 |
+|------------+-------------------+--------+--------+--------+--------|
+| 34 Tons    | Ft. Jackson       |     15 |     20 |      9 |     12 |
+| 18 Tons    | Ft. Jackson       |      0 |      0 |      4 |      0 |
+| 11 Tons    | Ft. Jackson       |      0 |      1 |      2 |      0 |
+|------------+-------------------+--------+--------+--------+--------|
+
+Using this allocation, the total cost will be $66,375.
+
+** Notes and Recommendations
+:PROPERTIES:
+:ID:       feba2269-0157-470f-b64d-8664c0916bc4
+:END:
+
+The 34 ton trucks provide our most economical method of moving supplies, while
+the 11 ton trucks are inefficient for the task. Each week, we use the maximum
+available turns with the 34 ton trucks, but in total we only use 14 turns of the
+11 ton trucks. As a result, we could reduce cost by using only six of the 11-ton
+trucks, allowing the other six to be used for other missions. However, even
+through utilization of the 11-ton trucks will be minimal during the final two
+weeks, we do not recommend dropping lower than six so that we have some built-in
+margin for potential maintenance issues and so that we can transport supplies in
+and around the training area more easily.
+
+Of our two sources of supplies, Ft. Liberty is significantly more economical to
+draw supplies from. Week to week, this plan will draw all but five tons of the
+total tonnage of supplies they have available to offer us. If more supplies were
+available from Ft. Liberty, or if they had a change in mission allowing for
+supplies to be reallocated to us from there, we could reduce costs further.
+
+Week two into week three is the critical phase of this operation from a supply
+perspective. Both weeks have a higher supply requirement, while week three has
+our lowest supply availability for the forts. As a result, we must fully max out
+our on-site storage from week two into week three in order to meet the demands
+of week three. This leaves us with no flexibility or room for error, as that
+week we draw all available supplies and use the max we are able to carry over.
+At the same time, we have capacity unused both in supplies available and assets
+to transport them in weeks one and two. We recommend identifying another site to
+store additional supplies in the training area, perhaps by having earlier units
+take extra supplies forward to pre-stage them for follow-on units, so we can
+build in some safety margin to allow for Murphy.
