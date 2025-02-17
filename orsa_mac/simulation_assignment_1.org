@@ -56,7 +56,7 @@ fire_fighter_response_simulator <- function(observed_times, runs) {
   if (!is.vector(observed_times) | !is.numeric(observed_times[1])) {
     stop("Please input a vector of observations of Firefighter Response Time.")
   }
-  if (!is.numeric(runs) | it < 1) {
+  if (!is.numeric(runs) | runs < 1) {
     stop("Iterations must be >= 1.")
   }
 
@@ -86,9 +86,6 @@ c(ff_sim$mean,ff_sim$max,ff_sim$min)
 #+end_src
 
 #+RESULTS: ff_sim
-|     1.33881061031184 |
-|     2.75996420826064 |
-| 7.28219747543335e-05 |
 
 ** Results
 :PROPERTIES:
@@ -252,7 +249,7 @@ jamming.
   3. What is the probability we can get the job done with exactly 19 missiles?
 
 
-#+begin_export ascii
+#+begin_export latex
 
    +-------------------+          /------------------\
    | For (i in 1:Runs) +-------->/ Initial Conditions \-----+
