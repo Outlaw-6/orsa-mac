@@ -298,7 +298,7 @@ jamming.
 :END:
 
 #+name: missile_sim
-#+begin_src R :session :var runs=100000 :exports both
+#+begin_src R :session :var runs=100000 :exports both :results table
 set.seed(123)
                                         # Initialize Out of Run Variables
 missiles_by_run <- NULL
