@@ -4,6 +4,8 @@
 #+PROPERTY: header-args:R  :session *R*
 #+PROPERTY: header-args:R  :dir ~/projects/orsa-mac/orsa_mac/
 #+OPTIONS: toc:nil
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [letter]
 #+LATEX_HEADER: \usepackage[margin = 1in]{geometry}
 #+LATEX_COMPILER: lualatex
 
@@ -47,7 +49,7 @@ solve for x in terms of R.
 I will build this simulation in R.
 
 #+name: ff_sim
-#+begin_src R :var runs=100000 :session
+#+begin_src R :var runs=100000 :session :exports both
 ff_response_data <- c(2.76, 1.83, 0.80, 1.45, 1.24)
 
 fire_fighter_response_simulator <- function(observed_times, runs) {
@@ -86,6 +88,9 @@ c(ff_sim$mean,ff_sim$max,ff_sim$min)
 #+end_src
 
 #+RESULTS: ff_sim
+|     1.33881061031184 |
+|     2.75996420826064 |
+| 7.28219747543335e-05 |
 
 ** Results
 :PROPERTIES:
@@ -103,7 +108,7 @@ data approximates a symmetric distribution.
 
 #+name: plot_ff_sim
 #+header: :file ./firestation_sim.png
-#+begin_src R :session :results output graphics file
+#+begin_src R :session :results output graphics file :exports both
 library(ggplot2)
 
 as.data.frame(ff_sim) |>
@@ -143,7 +148,7 @@ I can model the arrival times to the ID card office with an exponential distribu
 This is very similar to what we did in class with the coffee shop.
 
 #+name: id_sim
-#+begin_src R :session
+#+begin_src R :session :exports both
 set.seed(123)
 n <- 100
 mins <- 480
@@ -184,7 +189,7 @@ I set the seed to 123 for reproducibility, and ran the sim until the first custo
 
 #+name: plot_id_sim
 #+header: :file ./id_sim.png
-#+begin_src R :session :results output graphics file
+#+begin_src R :session :results output graphics file :exports both
 library(ggplot2)
 
 custs <- length(depart_clock)
@@ -293,7 +298,7 @@ jamming.
 :END:
 
 #+name: missile_sim
-#+begin_src R :session :var runs=100000
+#+begin_src R :session :var runs=100000 :exports both
 set.seed(123)
                                         # Initialize Out of Run Variables
 missiles_by_run <- NULL
@@ -354,7 +359,7 @@ only 19 missiles are 1 in 20,000. A histogram of all attempts is below.
 
 #+name: plot_missile_sim
 #+header: :file ./missile_sim.png
-#+begin_src R :session :results output graphics file
+#+begin_src R :session :results output graphics file :exports both
 library(ggplot2)
 data.frame(missiles = missiles_by_run) |>
   ggplot(aes(x = missiles)) +
