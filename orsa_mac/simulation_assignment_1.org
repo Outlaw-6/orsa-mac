@@ -257,14 +257,12 @@ jamming.
      we might use?
   3. What is the probability we can get the job done with exactly 19 missiles?
 
-
-#+begin_export latex
-
+The flowchart below shows the logic to be executed:
+#+begin_example
    +-------------------+          /------------------\
    | For (i in 1:Runs) +-------->/ Initial Conditions \-----+
    +-------------------+         \ (i.e. missile = 1) /     |
              ^                    \------------------/      |
-             |                                              |
              |             +--------------------------------+
              |             |  +-------------------+     /-----------------\
              |     +-------+->| While (hits < 19) |--> / Determine Flight  \
@@ -279,7 +277,7 @@ jamming.
              |     |  |                                  \---------------/  |
              |     |  |attempts remain                                      |
              |     |  |      +-----------------------+-------------------+--+
-             |     |  |      |                       |break              |break
+             |     |  |   12%|                   64% |break          24% |break
              |     |  |      v                       v                   v
              |     |  |  +---------+            +---------+         +---------+
              |     |  +--+ Great   |            |  Some   |         |   No    |
@@ -294,8 +292,7 @@ jamming.
              |                                 +-----+------+
              |  Record missiles used and run again   |
              +---------------------------------------+
-
-#+end_export
+#+end_example
 ** Simulation
 :PROPERTIES:
 :ID:       089933e0-a322-4dce-ae99-7cb9cf15a62e
@@ -343,16 +340,16 @@ for(i in 1:runs) {
   }
   missiles_by_run[i] <- missiles_shot
 }
-data.frame(mean = mean(missiles_by_run),
-           min = min(missiles_by_run),
-           max = max(missiles_by_run),
-           chance.of.19 = sum(missiles_by_run == 19)/runs)
+data.frame(Mean = mean(missiles_by_run),
+           Max = max(missiles_by_run),
+           Min = min(missiles_by_run),
+           Probability.of.Exact.Min = sum(missiles_by_run == 19)/runs)
 #+end_src
 
 #+RESULTS: missile_sim
-|     mean | min | max | chance_of_19 |
-|----------+-----+-----+--------------|
-| 32.45069 |  19 |  59 |        5e-05 |
+|     Mean | Max | Min | Probability.of.Exact.Min |
+|----------+-----+-----+--------------------------|
+| 32.45069 |  59 |  19 |                    5e-05 |
 
 ** Results
 :PROPERTIES:
