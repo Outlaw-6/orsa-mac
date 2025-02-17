@@ -49,7 +49,7 @@ solve for x in terms of R.
 I will build this simulation in R.
 
 #+name: ff_sim
-#+begin_src R :var runs=100000 :session :exports both
+#+begin_src R :var runs=100000 :session :exports both :colnames yes
 ff_response_data <- c(2.76, 1.83, 0.80, 1.45, 1.24)
 
 fire_fighter_response_simulator <- function(observed_times, runs) {
@@ -84,13 +84,15 @@ fire_fighter_response_simulator <- function(observed_times, runs) {
 
 set.seed(123)
 ff_sim <- fire_fighter_response_simulator(ff_response_data, runs)
-c(ff_sim$mean,ff_sim$max,ff_sim$min)
+data.frame(Mean.Response.Time = paste(round(ff_sim$mean,2),"minutes"),
+           Max.Response.Time = paste(round(ff_sim$max,2),"minutes"),
+           Min.Response.Time = paste(round(ff_sim$min,7),"minutes"))
 #+end_src
 
 #+RESULTS: ff_sim
-|     1.33881061031184 |
-|     2.75996420826064 |
-| 7.28219747543335e-05 |
+| Mean.Response.Time | Max.Response.Time | Min.Response.Time |
+|--------------------+-------------------+-------------------|
+| 1.34 minutes       | 2.76 minutes      | 0.0000728 minutes |
 
 ** Results
 :PROPERTIES:
@@ -108,7 +110,7 @@ data approximates a symmetric distribution.
 
 #+name: plot_ff_sim
 #+header: :file ./firestation_sim.png
-#+begin_src R :session :results output graphics file :exports both
+#+begin_src R :session :results output graphics file :exports results
 library(ggplot2)
 
 as.data.frame(ff_sim) |>
@@ -148,7 +150,7 @@ I can model the arrival times to the ID card office with an exponential distribu
 This is very similar to what we did in class with the coffee shop.
 
 #+name: id_sim
-#+begin_src R :session :exports both
+#+begin_src R :session :exports both :colnames yes
 set.seed(123)
 n <- 100
 mins <- 480
@@ -173,13 +175,15 @@ for (i in 1:n) {
   depart_clock[i] <- begin_service_clock[i] + service_times[i]
   if(depart_clock[i] > mins) {break}
 }
-clerk_utilization_rate <- sum(clerk_idle_time)/mins
-list(clerk_utilization_rate = clerk_utilization_rate,
-     max_time_in_queue = max(time_in_queue))
+clerk_utilization_rate <- 1-sum(clerk_idle_time)/mins
+list(Clerk.Utilization.Rate = paste(round(clerk_utilization_rate,2),"%"),
+     Max.Time.In.Queue = paste(round(max(time_in_queue),2),"minutes"))
 #+end_src
 
 #+RESULTS: id_sim
-| 0.294863193370666 | 72.8277499864645 |
+| Clerk.Utilization.Rate | Max.Time.In.Queue |
+|------------------------+-------------------|
+| 0.71 %                 | 72.83 minutes     |
 
 ** Results
 :PROPERTIES:
@@ -189,7 +193,7 @@ I set the seed to 123 for reproducibility, and ran the sim until the first custo
 
 #+name: plot_id_sim
 #+header: :file ./id_sim.png
-#+begin_src R :session :results output graphics file :exports both
+#+begin_src R :session :results output graphics file :exports results
 library(ggplot2)
 
 custs <- length(depart_clock)
@@ -298,7 +302,8 @@ jamming.
 :END:
 
 #+name: missile_sim
-#+begin_src R :session :var runs=100000 :exports both :results table
+#+header: :colnames yes
+#+begin_src R :session :var runs=100000 :exports both :results replace table
 set.seed(123)
                                         # Initialize Out of Run Variables
 missiles_by_run <- NULL
@@ -341,11 +346,13 @@ for(i in 1:runs) {
 data.frame(mean = mean(missiles_by_run),
            min = min(missiles_by_run),
            max = max(missiles_by_run),
-           chance_of_19 = sum(missiles_by_run == 19)/runs)
+           chance.of.19 = sum(missiles_by_run == 19)/runs)
 #+end_src
 
 #+RESULTS: missile_sim
-| 32.45069 | 19 | 59 | 5e-05 |
+|     mean | min | max | chance_of_19 |
+|----------+-----+-----+--------------|
+| 32.45069 |  19 |  59 |        5e-05 |
 
 ** Results
 :PROPERTIES:
@@ -359,7 +366,7 @@ only 19 missiles are 1 in 20,000. A histogram of all attempts is below.
 
 #+name: plot_missile_sim
 #+header: :file ./missile_sim.png
-#+begin_src R :session :results output graphics file :exports both
+#+begin_src R :session :results output graphics file :exports results
 library(ggplot2)
 data.frame(missiles = missiles_by_run) |>
   ggplot(aes(x = missiles)) +
