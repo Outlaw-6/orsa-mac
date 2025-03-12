@@ -3,11 +3,12 @@ name = "orsa-mac"
 version = "0.1.0"
 description = ""
 authors = ["Luke Miller <luke@cegorach.com>"]
-readme = "README.md"
+readme = "README.org"
 
 [tool.poetry.dependencies]
 python = "^3.13"
 scipy = "^1.15.1"
+geopy = "^2.4.1"
 
 
 [build-system]

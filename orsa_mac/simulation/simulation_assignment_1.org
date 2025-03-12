@@ -2,7 +2,6 @@
 #+author: Luke Miller
 
 #+PROPERTY: header-args:R  :session *R*
-#+PROPERTY: header-args:R  :dir ~/projects/orsa-mac/orsa_mac/
 #+OPTIONS: toc:nil
 #+LATEX_CLASS: article
 #+LATEX_CLASS_OPTIONS: [letter]
@@ -49,7 +48,7 @@ solve for x in terms of R.
 I will build this simulation in R.
 
 #+name: ff_sim
-#+begin_src R :var runs=100000 :session :exports both :colnames yes
+#+begin_src R :var runs=100000 :session :exports both :colnames yes :tangle yes
 ff_response_data <- c(2.76, 1.83, 0.80, 1.45, 1.24)
 
 fire_fighter_response_simulator <- function(observed_times, runs) {
@@ -109,16 +108,21 @@ minutes off from the max observed time of 2.76), a min time of
 data approximates a symmetric distribution.
 
 #+name: plot_ff_sim
-#+header: :file ./firestation_sim.png
+#+header: :file ./firestation_sim.png :tangle yes
 #+begin_src R :session :results output graphics file :exports results
 library(ggplot2)
 
 as.data.frame(ff_sim) |>
   ggplot(aes(x = times)) +
-  geom_histogram(binwidth = 0.2) +
-  geom_freqpoly()
+  theme_light() +
+  labs(title = "100,000 Sample Response Times",
+       x = "Response Time",
+       y = "Number of Times Generated") +
+  geom_histogram(binwidth = 0.1) +
+  geom_freqpoly(binwidth = 0.1)
 #+end_src
 
+#+attr_latex: :width 300px
 #+RESULTS: plot_ff_sim
 [[file:./firestation_sim.png]]
 
@@ -150,64 +154,74 @@ I can model the arrival times to the ID card office with an exponential distribu
 This is very similar to what we did in class with the coffee shop.
 
 #+name: id_sim
-#+begin_src R :session :exports both :colnames yes
+#+begin_src R :session :exports both :colnames yes :tangle yes :var runs=100000
 set.seed(123)
 n <- 100
 mins <- 480
+clerk_utilization_rates <- NULL
+max_in_queues <- NULL
 
-arrival_rolls <- runif(n)
-lambda_arrivals <- 1/15
-time_between_arrivals <- -log(arrival_rolls)/lambda_arrivals
-arrival_clock <- cumsum(time_between_arrivals)
+for (j in 1:runs) {
+  arrival_rolls <- runif(n)
+  lambda_arrivals <- 1/15
+  time_between_arrivals <- -log(arrival_rolls)/lambda_arrivals
+  arrival_clock <- cumsum(time_between_arrivals)
 
-service_rolls <- runif(n)
-lambda_service <- 1/12
-service_times <- -log(service_rolls)/lambda_service
+  service_rolls <- runif(n)
+  lambda_service <- 1/12
+  service_times <- -log(service_rolls)/lambda_service
 
-depart_clock <- NULL
-begin_service_clock <- NULL
-time_in_queue <- NULL
-clerk_idle_time <- NULL
-for (i in 1:n) {
-  begin_service_clock[i] <- max(arrival_clock[i],depart_clock[i-1])
-  time_in_queue[i] <- begin_service_clock[i]-arrival_clock[i]
-  clerk_idle_time[i] <- begin_service_clock[i] - if(is.null(depart_clock)){0} else {depart_clock[i-1]}
-  depart_clock[i] <- begin_service_clock[i] + service_times[i]
-  if(depart_clock[i] > mins) {break}
+  depart_clock <- NULL
+  begin_service_clock <- NULL
+  time_in_queue <- NULL
+  clerk_idle_time <- NULL
+  for (i in 1:n) {
+    begin_service_clock[i] <- max(arrival_clock[i],depart_clock[i-1])
+    time_in_queue[i] <- begin_service_clock[i]-arrival_clock[i]
+    clerk_idle_time[i] <- begin_service_clock[i] - if(is.null(depart_clock)){0} else {depart_clock[i-1]}
+    depart_clock[i] <- begin_service_clock[i] + service_times[i]
+    if(depart_clock[i] > mins) {break}
+  }
+  clerk_utilization_rates[j] <- 1-sum(clerk_idle_time)/mins
+  max_in_queues[j] <- max(time_in_queue)
 }
-clerk_utilization_rate <- 1-sum(clerk_idle_time)/mins
-list(Clerk.Utilization.Rate = paste(round(clerk_utilization_rate,2),"%"),
-     Max.Time.In.Queue = paste(round(max(time_in_queue),2),"minutes"))
+list(Clerk.Utilization.Rate = paste(round(mean(clerk_utilization_rates),2),"%"),
+     Absolute.Max.Time.In.Queue = paste(round(max(max_in_queues),2),"minutes"),
+     Average.Max.Time.In.Queue = paste(round(mean(max_in_queues),2),"minutes"))
 #+end_src
 
 #+RESULTS: id_sim
-| Clerk.Utilization.Rate | Max.Time.In.Queue |
-|------------------------+-------------------|
-| 0.71 %                 | 72.83 minutes     |
+| Clerk.Utilization.Rate | Absolute.Max.Time.In.Queue | Average.Max.Time.In.Queue |
+|------------------------+----------------------------+---------------------------|
+| 0.71 %                 | 308.31 minutes             | 68.61 minutes             |
 
 ** Results
 :PROPERTIES:
 :ID:       9d071dcc-c17a-47ca-8a56-6c15e09601a7
 :END:
-I set the seed to 123 for reproducibility, and ran the sim until the first customer departure time was above eight hours, representing the last customer of the day. Through that time, the clerk was idle 29.49% of the time, and the maximum time a customer was in the queue was 72.83 minutes. The histogram below shows customer time spent in the queue.
+I set the seed to 123 for reproducibility, and ran the sim 100,000 times from
+opening until the first customer departure time was above eight hours,
+representing the last customer of the day. Through that time, the clerk was idle
+29% of the time, the mean maximum time a customer was in the queue was 68.61
+minutes, and the absolute maximum time any customer spent in queue was a massive
+308.31 minutes. The histogram below shows customer time spent in the queue.
 
 #+name: plot_id_sim
-#+header: :file ./id_sim.png
+#+header: :file ./id_sim.png :tangle yes
 #+begin_src R :session :results output graphics file :exports results
 library(ggplot2)
 
-custs <- length(depart_clock)
-
-id_sim_df <- data.frame(interarrival_times = time_between_arrivals[1:custs],
-                        arrival_clock = arrival_clock[1:custs],
-                        service_times = service_times[1:custs],
-                        time_in_queue = time_in_queue)
-
-id_sim_df |>
-  ggplot(aes(x = time_in_queue)) +
-  geom_histogram(bins = 8)
+data.frame(max = max_in_queues) |>
+  ggplot(aes(x = max)) +
+  theme_light() +
+  labs(title = "100,000 Runs of 8 Hours",
+       x = "Max Time Customer Spent in Queue (minutes)",
+       y = "Number of Runs") +
+  geom_histogram(bins = 60) +
+  geom_freqpoly(bins = 60)
 #+end_src
 
+#+attr_latex: :width 350px
 #+RESULTS: plot_id_sim
 [[file:./id_sim.png]]
 
@@ -246,10 +260,10 @@ jamming.
   a 25% chance of failure to hit and the enemy doesn't get the second
   opportunity to defeat the missile.
 
-  Current intelligence estimated it will require 19 successful missile strikes
-  to destroy the enemy's munitions factory. You are to build a simulation model
-  in Excel or R that represents the above scenario and answer the following
-  questions:
+Current intelligence estimated it will require 19 successful missile strikes to
+destroy the enemy's munitions factory. You are to build a simulation model in
+Excel or R that represents the above scenario and answer the following
+questions:
 
   1. On average, how many missiles will we need to launch for success against
      the enemy's munitions plant?
@@ -299,7 +313,7 @@ The flowchart below shows the logic to be executed:
 :END:
 
 #+name: missile_sim
-#+header: :colnames yes
+#+header: :colnames yes :tangle yes
 #+begin_src R :session :var runs=100000 :exports both :results replace table
 set.seed(123)
                                         # Initialize Out of Run Variables
@@ -312,6 +326,7 @@ great_success <- 0.12
 some_success <- 0.64 + great_success
 great_success_hit_chance <- 0.95
 some_success_hit_chance <- 0.75
+no_success_hit_chance <- 0
 
                                         # Loop number of runs
 for(i in 1:runs) {
@@ -331,6 +346,7 @@ for(i in 1:runs) {
         hit_chance <- some_success_hit_chance
         break
       } else {
+        hit_chance <- no_success_hit_chance
         break
       }
     }
@@ -349,7 +365,7 @@ data.frame(Mean = mean(missiles_by_run),
 #+RESULTS: missile_sim
 |     Mean | Max | Min | Probability.of.Exact.Min |
 |----------+-----+-----+--------------------------|
-| 32.45069 |  59 |  19 |                    5e-05 |
+| 33.30341 |  65 |  19 |                    2e-05 |
 
 ** Results
 :PROPERTIES:
@@ -362,14 +378,19 @@ absolute minimum of 19 missiles, while our least took 59. The odds of taking
 only 19 missiles are 1 in 20,000. A histogram of all attempts is below.
 
 #+name: plot_missile_sim
-#+header: :file ./missile_sim.png
+#+header: :file ./missile_sim.png :tangle yes
 #+begin_src R :session :results output graphics file :exports results
 library(ggplot2)
 data.frame(missiles = missiles_by_run) |>
   ggplot(aes(x = missiles)) +
-  geom_histogram(bins = 40) +
-  geom_freqpoly(bins = 40)
-#+end_src
+  theme_light() +
+  labs(title = "Missiles Required Across 100,000 Runs",
+       x = "Missiles Required",
+       y = "Count of Runs") +
+  geom_histogram(bins = 47) +
+  geom_freqpoly(bins = 47)
+  #+end_src
 
+#+attr_latex: :width 450px
 #+RESULTS: plot_missile_sim
 [[file:./missile_sim.png]]
