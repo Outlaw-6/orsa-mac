@@ -3,6 +3,56 @@
 :ID:       2e7a76a2-d48c-4695-a755-f38618d24ed5
 :END:
 
+* TODO What still needs doing:
+:PROPERTIES:
+:ID:       1da0159e-7a23-4d84-89a2-db6f66fe47ab
+:END:
+** TODO Adding stats [0/3]
+:PROPERTIES:
+:ID:       baee5743-90cd-4117-94e2-857d30052232
+:END:
+- [ ] Targets [0/2]
+  - [ ] CSV [0/3]
+    - [ ] Radius
+    - [ ] Type
+    - [ ] Priority
+  - [ ] Code to eat it
+- [ ] Weapon Systems
+  - [ ] CSV [0/2]
+    - [ ] Locations
+    - [ ] Weapons per by type
+  - [ ] Code to eat it
+- [ ] Weapons [0/2]
+  - [ ] CSV [0/5]
+    - [ ] Burst radius by target type
+    - [ ] Range
+    - [ ] CEP
+    - [ ] Reliability
+    - [ ] JKW Probability
+  - [ ] Code to eat it [0/1]
+    - [ ] Burst radius needs to become a dict?
+** TODO Enumerate target types
+:PROPERTIES:
+:ID:       e24720f8-f379-496c-b4e3-323be3f2f6c6
+:END:
+Should be 11 types. Need to make a enum/dict/something to use as a reference internally.
+** TODO Finish targeting step
+:PROPERTIES:
+:ID:       89b95e66-cfe4-4f30-bdbf-b230c6c878b5
+:END:
+I'm almost there -- just need to feed the array's I've built into a linear solver.
+** TODO Engagement Simulation Step
+:PROPERTIES:
+:ID:       35482981-40cb-4ba6-83e9-f600798b69c4
+:END:
+** TODO Instrumentation to record what happens in the targeting and sim
+:PROPERTIES:
+:ID:       81648e9a-4957-4135-8d5a-a3c3ed6cf673
+:END:
+** TODO Analysis of the outputs (R?)
+:PROPERTIES:
+:ID:       8de520ff-ec6b-4157-ae36-e82461939ac3
+:END:
 * Modeling thoughts
 :PROPERTIES:
 :ID:       412cff2f-7897-4032-8ad0-6d9306183d61

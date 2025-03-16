@@ -137,6 +137,7 @@ def targeting(mlrs: list[WeaponSystem], tgts: list[Target]):
     constraints_rhs[-1] = m
     for i in range(n_tgts):
         index = (n_mlrs + 1) * n_tgts - (n_tgts - i)
-        constraints_lhs[n_mlrs+i][index] = m
+        for j in range(n_tgts):
+            constraints_lhs[n_mlrs+i][-(j+1)] = m
         #TODO put priority checking in here. High priority node cost for dummy is m
         coefficients[index] = 20
