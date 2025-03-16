@@ -1,5 +1,18 @@
-* Orsa-Mac 
+* ORSA-MAC
+:PROPERTIES:
+:ID:       2e7a76a2-d48c-4695-a755-f38618d24ed5
+:END:
 
-** Usage
+* Modeling thoughts
+:PROPERTIES:
+:ID:       412cff2f-7897-4032-8ad0-6d9306183d61
+:END:
+** Abstract from burst area / target area to hit points? (Scenario 1)
+:PROPERTIES:
+:ID:       efca6edb-b40f-45a3-af44-f188d1ebf1d0
+:END:
 
-** Installation
+We'll need some level of abstraction to determine how much is destroyed. Burst
+area greater than target area is destroyed, but how much under before we need a
+second shot? And how do we add them up? Gets complex fast -- could just abstract
+it to hit points.
