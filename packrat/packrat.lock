@@ -1,9 +1,0 @@
-PackratFormat: 1.4
-PackratVersion: 0.9.2
-RVersion: 4.4.2
-Repos: CRAN=https://lib.stat.cmu.edu/R/CRAN
-
-Package: packrat
-Source: CRAN
-Version: 0.9.2
-Hash: d3bf41196a75aea08470c041f34bddff
