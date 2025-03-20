@@ -98,45 +98,77 @@ def main():
             mlrs += [WeaponSystem((lat,lon),[],name)]
 
 
-def targeting(mlrs: list[WeaponSystem], tgts: list[Target]):
+def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
     # Get total length of our array of DVs
-    total = (len(mlrs) + 1) * len(tgts)
-    coefficients = [0 for _ in range(total)]
-    dvs = [0 for _ in range(total)]
+    total = (len(wpn_systems) + 1) * len(tgts)
+    coefficients = []
+    dvs = []
 
-    m = 1000000
+    m = 10
 
     n_tgts = len(tgts)
-    n_mlrs = len(mlrs)
+    n_wpns = len(wpn_systems)
 
     # Make the array of LHS coefficents and vector of RHS values
-    constraints_lhs = [[0 for _ in range(total)] for _ in range(n_mlrs + n_tgts + 1)]
-    constraints_rhs = [0 for _ in range(n_mlrs + n_tgts + 1)]
+    constraints_lhs = [[] for _ in range(n_wpns + n_tgts)]
+    constraints_rhs = [0 for _ in range(n_wpns + n_tgts)]
 
     # Go through all weapon/target combinations
-    for i, bn in enumerate(mlrs, start = 1):
+    for i, wpn_sys in enumerate(wpn_systems):
         # Add weapon constraint RHS
-        constraints_rhs[i-1] = 1
+        constraints_rhs[i] = 1
+
+        # Pad leading 0s for wpns
+        constraints_lhs[i] += [0 for _ in range(len(dvs))]
 
         # Build constraint vector for combination
-        for j, tgt in enumerate(tgts, start = 1):
-            index = i * n_tgts - (n_tgts - (j-1))
-            constraints_lhs[(i-1)][index] = 1
-            if (bn.distance(tgt) < 300):
-                constraints_lhs[n_mlrs+j-1][index] = (-1) * bn.weapons[0].burst_radius
-                coefficients[index] = bn.weight(tgt)
-            else:
-                coefficients[index] = 2*m
+        for j, tgt in enumerate(tgts):
+            # Pad leading 0s for tgts
+            constraints_lhs[(n_wpns+j)] += [0 for _ in range(j)]
+            for _, wpn in enumerate(wpn_sys.weapons, start = 1):
+                dvs.append(0)
+                constraints_lhs[i].append(1)
+                if (wpn_sys.distance(tgt) < wpn.range):
+                    constraints_lhs[(n_wpns+j)].append(-1)
+                    coefficients.append(wpn_sys.weight(tgt))
+                else:
+                    constraints_lhs[(n_wpns+j)].append(0)
+                    coefficients.append(2*m)
+        # Pad trailing 0s for tgts
+        for j in range(n_tgts):
+            constraints_lhs[(n_wpns+j)] += [0 for _ in range(n_tgts - j - 1)]
 
     # Add target constraint RHS
     for j, tgt in enumerate(tgts):
-        constraints_rhs[j+len(mlrs)] = tgt.radius * (-1)
+        constraints_rhs[j+n_wpns] = -1
 
     # Add dummy node
-    constraints_rhs[-1] = m
-    for i in range(n_tgts):
-        index = (n_mlrs + 1) * n_tgts - (n_tgts - i)
-        constraints_lhs[n_mlrs+i][index] = m
-        #TODO put priority checking in here. High priority node cost for dummy is m
-        coefficients[index] = 20
+    for j, tgt in enumerate(tgts):
+        # Pad leading 0s for tgts
+        constraints_lhs[(n_wpns+j)] += [0 for _ in range(j)]
+
+        # Add dummy node coefficients
+        constraints_lhs[(n_wpns+j)].append(-m)
+        dvs.append(0)
+
+        # Check priority. High priority doesn't get dummy node.
+        if (tgt.priority >= 1):
+            coefficients.append(m)
+        else:
+            coefficients.append(1)
+
+    # Pad trailing 0s for tgts
+    for j in range(n_tgts):
+        constraints_lhs[(n_wpns+j)] += [0 for _ in range(n_tgts - j - 1)]
+
+    # Pad trailing 0s for wpns
+    for i in range(n_wpns):
+        constraints_lhs[i] += [0 for _ in range(len(dvs) - len(constraints_lhs[i]))]
+
+    # Send to the Solver
+    #opt.linprog
+    return({"dvs": dvs,
+            "coefficients": coefficients,
+            "lhs": constraints_lhs,
+            "rhs": constraints_rhs})
