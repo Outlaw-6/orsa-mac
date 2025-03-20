@@ -68,7 +68,7 @@ class WeaponSystem(SimEntity):
         self.name = name
 
     # TODO make weighing function
-    def weight(self):
+    def weight(self, _target: Target):
         return(5)
 
 
@@ -125,7 +125,7 @@ def targeting(mlrs: list[WeaponSystem], tgts: list[Target]):
             constraints_lhs[(i-1)][index] = 1
             if (bn.distance(tgt) < 300):
                 constraints_lhs[n_mlrs+j-1][index] = (-1) * bn.weapons[0].burst_radius
-                coefficients[index] = bn.weight()
+                coefficients[index] = bn.weight(tgt)
             else:
                 coefficients[index] = 2*m
 
@@ -137,7 +137,6 @@ def targeting(mlrs: list[WeaponSystem], tgts: list[Target]):
     constraints_rhs[-1] = m
     for i in range(n_tgts):
         index = (n_mlrs + 1) * n_tgts - (n_tgts - i)
-        for j in range(n_tgts):
-            constraints_lhs[n_mlrs+i][-(j+1)] = m
+        constraints_lhs[n_mlrs+i][index] = m
         #TODO put priority checking in here. High priority node cost for dummy is m
         coefficients[index] = 20
