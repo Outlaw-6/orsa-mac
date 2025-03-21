@@ -100,40 +100,42 @@ def main():
 
 def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
-    coefficients = []
-
     m = 10
 
     n_tgts = len(tgts)
     n_wpns = len(wpn_systems)
 
+    total = 0
+    for wpn_sys in wpn_systems:
+        for _ in tgts:
+            for _ in wpn_sys.weapons:
+                total += 1
+    total += len(tgts)
+
+    coefficients = [0 for _ in range(total)]
+
     # Make the array of LHS coefficents and vector of RHS values
-    constraints_lhs = [[] for _ in range(n_wpns + n_tgts)]
+    constraints_lhs = [[0 for _ in range(total)] for _ in range(n_wpns + n_tgts)]
     constraints_rhs = [0 for _ in range(n_wpns + n_tgts)]
+
+    index = 0
 
     # Go through all weapon/target combinations
     for i, wpn_sys in enumerate(wpn_systems):
         # Add weapon constraint RHS
         constraints_rhs[i] = 1
 
-        # Pad leading 0s for wpns
-        constraints_lhs[i] += [0 for _ in range(len(coefficients))]
-
         # Build constraint vector for combination
         for j, tgt in enumerate(tgts):
-            # Pad leading 0s for tgts
-            constraints_lhs[(n_wpns+j)] += [0 for _ in range(j)]
             for _, wpn in enumerate(wpn_sys.weapons, start = 1):
-                constraints_lhs[i].append(1)
+                constraints_lhs[i][index] = 1
                 if (wpn_sys.distance(tgt) < wpn.range):
-                    constraints_lhs[(n_wpns+j)].append(-1)
-                    coefficients.append(wpn_sys.weight(tgt))
+                    constraints_lhs[(n_wpns+j)][index] = -1
+                    coefficients[index] = wpn_sys.weight(tgt)
                 else:
-                    constraints_lhs[(n_wpns+j)].append(0)
-                    coefficients.append(2*m)
-        # Pad trailing 0s for tgts
-        for j in range(n_tgts):
-            constraints_lhs[(n_wpns+j)] += [0 for _ in range(n_tgts - j - 1)]
+                    constraints_lhs[(n_wpns+j)][index] = 0
+                    coefficients[index] = 2*m
+                index += 1
 
     # Add target constraint RHS
     for j, tgt in enumerate(tgts):
@@ -141,26 +143,20 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
     # Add dummy node
     for j, tgt in enumerate(tgts):
-        # Pad leading 0s for tgts
-        constraints_lhs[(n_wpns+j)] += [0 for _ in range(j)]
-
         # Add dummy node coefficients
-        constraints_lhs[(n_wpns+j)].append(-m)
+        constraints_lhs[(n_wpns+j)][index] = -m
 
         # Check priority. High priority doesn't get dummy node.
         if (tgt.priority >= 1):
-            coefficients.append(m)
+            coefficients[index] = m
         else:
-            coefficients.append(1)
+            coefficients[index] = 1
+        index += 1
 
-    # Pad trailing 0s for tgts
-    for j in range(n_tgts):
-        constraints_lhs[(n_wpns+j)] += [0 for _ in range(n_tgts - j - 1)]
-
-    # Pad trailing 0s for wpns
-    for i in range(n_wpns):
-        constraints_lhs[i] += [0 for _ in range(len(coefficients)
-                                                - len(constraints_lhs[i]))]
+    # TODO remove these debugging prints
+    print(f"LHS: {constraints_lhs}")
+    print(f"RHS: {constraints_rhs}")
+    print(f"c: {coefficients}")
 
     # Send to the Solver
     res = opt.linprog(c=coefficients, A_ub=constraints_lhs, b_ub=constraints_rhs,
