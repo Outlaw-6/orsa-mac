@@ -100,10 +100,7 @@ def main():
 
 def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
-    # Get total length of our array of DVs
-    total = (len(wpn_systems) + 1) * len(tgts)
     coefficients = []
-    dvs = []
 
     m = 10
 
@@ -120,14 +117,13 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
         constraints_rhs[i] = 1
 
         # Pad leading 0s for wpns
-        constraints_lhs[i] += [0 for _ in range(len(dvs))]
+        constraints_lhs[i] += [0 for _ in range(len(coefficients))]
 
         # Build constraint vector for combination
         for j, tgt in enumerate(tgts):
             # Pad leading 0s for tgts
             constraints_lhs[(n_wpns+j)] += [0 for _ in range(j)]
             for _, wpn in enumerate(wpn_sys.weapons, start = 1):
-                dvs.append(0)
                 constraints_lhs[i].append(1)
                 if (wpn_sys.distance(tgt) < wpn.range):
                     constraints_lhs[(n_wpns+j)].append(-1)
@@ -150,7 +146,6 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
         # Add dummy node coefficients
         constraints_lhs[(n_wpns+j)].append(-m)
-        dvs.append(0)
 
         # Check priority. High priority doesn't get dummy node.
         if (tgt.priority >= 1):
@@ -164,11 +159,11 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
     # Pad trailing 0s for wpns
     for i in range(n_wpns):
-        constraints_lhs[i] += [0 for _ in range(len(dvs) - len(constraints_lhs[i]))]
+        constraints_lhs[i] += [0 for _ in range(len(coefficients)
+                                                - len(constraints_lhs[i]))]
 
     # Send to the Solver
-    #opt.linprog
-    return({"dvs": dvs,
-            "coefficients": coefficients,
-            "lhs": constraints_lhs,
-            "rhs": constraints_rhs})
+    res = opt.linprog(c=coefficients, A_ub=constraints_lhs, b_ub=constraints_rhs,
+                      bounds=(0,1), integrality=1)
+
+    return(res.x)
