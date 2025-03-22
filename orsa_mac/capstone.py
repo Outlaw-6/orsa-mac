@@ -2,6 +2,7 @@
 
 import csv
 import math
+import random
 import geopy.distance as gd
 import scipy.optimize as opt
 
@@ -13,13 +14,14 @@ It contains the main logic loop for our ATACMs vs. PRSM simultaion.
 __version__ = "0.1"
 __author__ = "Luke Miller"
 
+
 class SimEntity:
 
     """A superclass to both targets and weapon systems. Has a location.
     """
 
-    def __init__(self, location: float):
-        self.location = location
+    def __init__(self, location: tuple[float, float]):
+        self.location: tuple[float, float] = location
 
     def process_tick(self):
         print("Base Class Tick Process Message")
@@ -27,7 +29,14 @@ class SimEntity:
     def distance(self, other) -> float:
         return(gd.great_circle(self.location, other.location).km)
 
+    highest_cost = 2000000
 
+    targeting_weights = {"cost": 1,
+                         "cd": 1,
+                         "reliability": 1,
+                         "jkw": 2}
+
+
 class Target(SimEntity):
 
     """A target in the sim.
@@ -35,43 +44,97 @@ class Target(SimEntity):
 
     def __init__(self, location: tuple[float, float],
                  radius: int, priority: int, name: str):
-        self.location = location
-        self.area = radius ** 2 * math.pi
-        self.priority = priority
-        self.radius = radius
-        self.name = name
+        self.location: tuple[float, float] = location
+        self.area: float = radius ** 2 * math.pi
+        self.priority: int = priority
+        self.radius: int = radius
+        self.name: str = name
 
-
+
 class Weapon:
 
     """A munition fired from a weapon system
     """
 
-    def __init__(self, range: int, burst_radius: int,
-                 reliability: float, jkw_prob: float, cep: int):
-        self.range = range
-        self.burst_radius = burst_radius
-        self.reliability = reliability
-        self.jkw_prob = jkw_prob
-        self.cep = cep
+    def __init__(self,
+                 range: int,
+                 burst_radius: int,
+                 reliability: float,
+                 jkw_prob: float,
+                 cep: int,
+                 cost: float):
+        self.range:int = range
+        self.burst_radius: int = burst_radius
+        self.burst_area: float = burst_radius ** 2 * math.pi
+        self.reliability: float = reliability
+        self.jkw_prob: float = jkw_prob
+        self.cep: int = cep
+        self.cost: float = cost
 
-
+
 class WeaponSystem(SimEntity):
 
     """A weapon system in the sim
     """
 
-    def __init__(self, location: tuple[float, float],
-                 weapons: list[Weapon], name: str):
+    def __init__(self,
+                 location: tuple[float, float],
+                 weapons: list[Weapon],
+                 name: str):
         self.location = location
         self.weapons = weapons
         self.name = name
 
-    # TODO make weighing function
-    def weight(self, _target: Target):
-        return(5)
 
+    def weight(self, tgt: Target, weapon: int) -> float:
+        wpn = self.weapons[weapon]
+        factor_weights = self.targeting_weights
+        cost_factor = wpn.cost/self.highest_cost/factor_weights["cost"]
+        jkw_factor = (1-wpn.jkw_prob)/factor_weights["jkw"]
+        reliability_factor = (1-wpn.reliability)/factor_weights["reliability"]
+        burst_delta = (wpn.burst_radius - tgt.radius)/wpn.burst_radius
+        if burst_delta > 0:
+            cd_factor = burst_delta/factor_weights["cd"]
+        else:
+            cd_factor = 0
 
+        return(cost_factor + jkw_factor + reliability_factor + cd_factor)
+
+
+class F15(WeaponSystem):
+
+    """An F15. They have special rules.
+    """
+
+    def __init__(self,
+                 location: tuple[float, float],
+                 weapons: list[Weapon],
+                 name: str,
+                 take_off_reliability: float,
+                 flight_reliability: float,
+                 ada_reliability: float,
+                 engage_reliability: float):
+        self.location: tuple[float, float] = location
+        self.weapons: list[Weapon] = weapons
+        self.name: str = name
+        self.take_off_reliability: float = take_off_reliability
+        self.flight_reliability: float = flight_reliability
+        self.ada_reliability: float = ada_reliability
+        self.engage_reliability: float = engage_reliability
+
+    def update_location(self, location: tuple[float, float]):
+        self.location = location
+
+    def take_off(self) -> bool:
+        return(random.random() < self.take_off_reliability)
+
+    def fly(self) -> bool:
+        return(random.random() < self.flight_reliability)
+
+    def penetrate_ada(self) -> bool:
+        return(random.random() < self.ada_reliability)
+
+
 def main():
 
     """Main Loop.
@@ -97,8 +160,18 @@ def main():
             lon = float(line[3])
             mlrs += [WeaponSystem((lat,lon),[],name)]
 
-
+
 def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
+
+    """Builds a linear program to solve for optimal weapon assignment.
+
+    Returns an array in the order of weapon system(i) - target(j) - weapon(k).
+
+    A one in the return array corresponds to engaging with the weapon at ijk
+    position when iterating through all i weapon systems, j targets and k
+    weapons.
+
+    """
 
     m = 10
 
@@ -112,7 +185,7 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
                 total += 1
     total += len(tgts)
 
-    coefficients = [0 for _ in range(total)]
+    coefficients = [0.0 for _ in range(total)]
 
     # Make the array of LHS coefficents and vector of RHS values
     constraints_lhs = [[0 for _ in range(total)] for _ in range(n_wpns + n_tgts)]
@@ -127,11 +200,11 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
         # Build constraint vector for combination
         for j, tgt in enumerate(tgts):
-            for _, wpn in enumerate(wpn_sys.weapons, start = 1):
+            for k, wpn in enumerate(wpn_sys.weapons):
                 constraints_lhs[i][index] = 1
                 if (wpn_sys.distance(tgt) < wpn.range):
                     constraints_lhs[(n_wpns+j)][index] = -1
-                    coefficients[index] = wpn_sys.weight(tgt)
+                    coefficients[index] = wpn_sys.weight(tgt, k)
                 else:
                     constraints_lhs[(n_wpns+j)][index] = 0
                     coefficients[index] = 2*m
