@@ -3,7 +3,7 @@
 :ID:       2e7a76a2-d48c-4695-a755-f38618d24ed5
 :END:
 
-* TODO What still needs doing [0/6]:
+* TODO What still needs doing [1/7]:
 :PROPERTIES:
 :ID:       1da0159e-7a23-4d84-89a2-db6f66fe47ab
 :END:
@@ -12,10 +12,12 @@
 :ID:       baee5743-90cd-4117-94e2-857d30052232
 :END:
 - [ ] Targets [0/2]
-  - [ ] CSV [0/3]
-    - [ ] Radius
+  - [ ] CSV [0/5]
     - [ ] Type
+    - [ ] Name
+    - [ ] Location
     - [ ] Priority
+    - [ ] Radius
   - [ ] Code to eat it
 - [ ] Weapon Systems
   - [ ] CSV [0/2]
@@ -28,15 +30,14 @@
     - [ ] Range
     - [ ] CEP
     - [ ] Reliability
-    - [ ] JKW Probability
-  - [ ] Code to eat it [0/1]
-    - [ ] Burst radius needs to become a dict?
+    - [ ] JKW Probability by target type
+  - [ ] Code to eat it
 ** TODO Enumerate target types
 :PROPERTIES:
 :ID:       e24720f8-f379-496c-b4e3-323be3f2f6c6
 :END:
 Should be 11 types. Need to make a enum/dict/something to use as a reference internally.
-** TODO Finish targeting step
+** DONE Finish targeting step
 :PROPERTIES:
 :ID:       89b95e66-cfe4-4f30-bdbf-b230c6c878b5
 :END:
@@ -62,7 +63,19 @@ I'm almost there -- just need to feed the array's I've built into a linear solve
 :ID:       efca6edb-b40f-45a3-af44-f188d1ebf1d0
 :END:
 
+*** Initial idea
+:PROPERTIES:
+:ID:       1f5e1346-ecda-436b-bf87-24fcde37c621
+:END:
+
 We'll need some level of abstraction to determine how much is destroyed. Burst
 area greater than target area is destroyed, but how much under before we need a
 second shot? And how do we add them up? Gets complex fast -- could just abstract
 it to hit points.
+
+*** Way ahead from talking with LTC Dwyer
+:PROPERTIES:
+:ID:       0c12e4e5-1eaf-4f75-ae2e-40b4fa94d545
+:END:
+Each thing takes one hit. For a larger target, they get split into a few smaller
+ones.
