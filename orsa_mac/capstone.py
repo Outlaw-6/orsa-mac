@@ -31,10 +31,6 @@ class SimEntity:
 
     highest_cost = 2000000
 
-    targeting_weights = {"cost": 1,
-                         "cd": 1,
-                         "reliability": 1,
-                         "jkw": 2}
 
 
 class Target(SimEntity):
@@ -62,7 +58,8 @@ class Weapon:
                  reliability: float,
                  jkw_prob: float,
                  cep: int,
-                 cost: float):
+                 cost: float,
+                 type: str):
         self.range:int = range
         self.burst_radius: int = burst_radius
         self.burst_area: float = burst_radius ** 2 * math.pi
@@ -70,6 +67,7 @@ class Weapon:
         self.jkw_prob: float = jkw_prob
         self.cep: int = cep
         self.cost: float = cost
+        self.type: str = type
 
 
 class WeaponSystem(SimEntity):
@@ -100,6 +98,16 @@ class WeaponSystem(SimEntity):
 
         return(cost_factor + jkw_factor + reliability_factor + cd_factor)
 
+
+    def range(self, weapon: int) -> float:
+        return(self.weapons[weapon].range)
+
+    targeting_weights = {"cost": 1,
+                         "cd": 1,
+                         "reliability": 1,
+                         "jkw": 2}
+
+
 
 class F15(WeaponSystem):
 
@@ -113,7 +121,8 @@ class F15(WeaponSystem):
                  take_off_reliability: float,
                  flight_reliability: float,
                  ada_reliability: float,
-                 engage_reliability: float):
+                 engage_reliability: float,
+                 fuel_dist: float):
         self.location: tuple[float, float] = location
         self.weapons: list[Weapon] = weapons
         self.name: str = name
@@ -121,8 +130,12 @@ class F15(WeaponSystem):
         self.flight_reliability: float = flight_reliability
         self.ada_reliability: float = ada_reliability
         self.engage_reliability: float = engage_reliability
+        self.fuel_dist: float = fuel_dist
 
     def update_location(self, location: tuple[float, float]):
+        distance = self.distance(location)
+        if distance > self.fuel_dist:
+            print("past fuel range") # TODO put an actual fuel system here
         self.location = location
 
     def take_off(self) -> bool:
@@ -133,6 +146,13 @@ class F15(WeaponSystem):
 
     def penetrate_ada(self) -> bool:
         return(random.random() < self.ada_reliability)
+
+    def range(self, weapon: int) -> float:
+        wpn = self.weapons[weapon]
+        if wpn.type == "GBU10" or wpn.type == "GBU39":
+            return(self.fuel_dist)
+        else:
+            return(self.fuel_dist + wpn.range)
 
 
 def main():
@@ -200,9 +220,9 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
         # Build constraint vector for combination
         for j, tgt in enumerate(tgts):
-            for k, wpn in enumerate(wpn_sys.weapons):
+            for k, _ in enumerate(wpn_sys.weapons):
                 constraints_lhs[i][index] = 1
-                if (wpn_sys.distance(tgt) < wpn.range):
+                if (wpn_sys.distance(tgt) < wpn_sys.range(k)):
                     constraints_lhs[(n_wpns+j)][index] = -1
                     coefficients[index] = wpn_sys.weight(tgt, k)
                 else:
