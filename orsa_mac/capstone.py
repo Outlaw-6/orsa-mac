@@ -31,7 +31,6 @@ class SimEntity:
 
     highest_cost = 2000000
 
-
 
 class Target(SimEntity):
 
@@ -178,48 +177,6 @@ def scenario_1():
     """Main Loop for Scenario One.
     """
 
-    # Load Targets TODO redo
-    targets: list[Target] = []
-    with open("./target_lat_lon.csv", mode="r") as f:
-        csv_tgts = list(csv.reader(f))
-        for line in csv_tgts[1:]:
-            name = line[1]
-            lat = float(line[2])
-            lon = float(line[3])
-            targets.append(Target("CT","CT1",(lat,lon),0,0))
-
-    # Load MLRS TODO redo
-    mlrs: list[WeaponSystem] = []
-    with open("./MLRS_BN_lat_lon.csv", mode="r") as f:
-        csv_mlrs = list(csv.reader(f))
-        for line in csv_mlrs[1:]:
-            name = line[1]
-            lat = float(line[2])
-            lon = float(line[3])
-            mlrs += [WeaponSystem((lat,lon),[],name,[1])]
-
-    # Load SAMS
-    sams: list[Target] = []
-    sam_radars: list[Target] = []
-    with open("./sams.csv", mode="r") as f:
-        csv_sams = list(csv.reader(f))
-        for i, line in enumerate(csv_sams[1:]):
-            type,name,lat,lon,radius,priority = line
-            lat = float(lat)
-            lon = float(lon)
-            radius = int(radius)
-            priority = int(priority)
-            sam_radars.append(Target(type,name,(lat,lon),radius,priority))
-
-            # Add a SAM site within 50km of the radar at random
-            new_lat = lat - 0.5 + random.random()
-            new_lon = lon - 0.5 + random.random()
-            while (gd.great_circle((lat,lon),new_lat,new_lon).km > 50):
-                new_lat = lat - 0.5 + random.random()
-                new_lon = lon - 0.5 + random.random()
-            sams.append(Target("SAM","SAM " + str(i),
-                               (new_lat, new_lon), radius, priority))
-
     # Load Weapon Types
     weapons: dict[str,Weapon] = {}
     with open("./wpn_stats.csv", mode="r") as f:
@@ -247,6 +204,63 @@ def scenario_1():
             jkw[tgt] = float(jkw_p)
             burst[tgt] = float(burst_r)
         weapons[wpn] = Weapon(range,burst,reliability,jkw,cep,cost,wpn)
+
+    # Load MLRS
+    mlrs: list[WeaponSystem] = []
+    with open("./MLRS_BN_lat_lon_30.csv", mode="r") as f:
+        csv_mlrs = list(csv.reader(f))
+        for line in csv_mlrs[1:]:
+            type,name,lat,lon,ammo = line
+            mlrs.append(WeaponSystem((float(lat),float(lon)),
+                                     [weapons["ATACM"]],name,[int(ammo)]))
+
+    # Load DDG
+    ddg: list[WeaponSystem] = []
+    with open("./ddg.csv", mode="r") as f:
+        csv_ddg = list(csv.reader(f))
+        t2,t3,slam,slamer = csv_ddg[0][4:]
+        t2 = weapons[t2]
+        t3 = weapons[t3]
+        slam = weapons[slam]
+        slamer = weapons[slamer]
+        for line in csv_ddg[1:]:
+            type,name,lat,lon,t2_a,t3_a,slam_a,slamer_a = line
+            ddg.append(WeaponSystem((float(lat),float(lon)),
+                                    [t2,t3,slam,slamer],
+                                    name,
+                                    [int(t2_a),int(t3_a),
+                                     int(slam_a),int(slamer_a)]))
+
+    # Load Targets
+    targets: list[Target] = []
+    with open("./target_lat_lon.csv", mode="r") as f:
+        csv_tgts = list(csv.reader(f))
+        for line in csv_tgts[1:]:
+            type,name,lat,lon,radius,priority = line
+            targets.append(Target(type,name,(float(lat),float(lon)),
+                                  int(radius),int(priority)))
+
+    # Load SAMS
+    sams: list[Target] = []
+    sam_radars: list[Target] = []
+    with open("./sams.csv", mode="r") as f:
+        csv_sams = list(csv.reader(f))
+        for i, line in enumerate(csv_sams[1:]):
+            type,name,lat,lon,radius,priority = line
+            lat = float(lat)
+            lon = float(lon)
+            radius = int(radius)
+            priority = int(priority)
+            sam_radars.append(Target(type,name,(lat,lon),radius,priority))
+
+            # Add a SAM site within 50km of the radar at random
+            new_lat = lat - 0.5 + random.random()
+            new_lon = lon - 0.5 + random.random()
+            while (gd.great_circle((lat,lon),new_lat,new_lon).km > 50):
+                new_lat = lat - 0.5 + random.random()
+                new_lon = lon - 0.5 + random.random()
+            sams.append(Target("SAM","SAM " + str(i),
+                               (new_lat, new_lon), radius, priority))
 
 
 def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
@@ -323,4 +337,13 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
     res = opt.linprog(c=coefficients, A_ub=constraints_lhs, b_ub=constraints_rhs,
                       bounds=(0,1), integrality=1)
 
-    return(res.x)
+    results = []
+    index = 0
+    for i, wpn_sys in enumerate(wpn_systems):
+        for j, tgt in enumerate(tgts):
+            for k in range(len(wpn_sys.weapons)):
+                if res.x[index] == 1:
+                    results.append((wpn_sys, tgt, k))
+                index += 1
+
+    return(results)
