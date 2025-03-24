@@ -18,13 +18,13 @@ __author__ = "Luke Miller"
 class SimEntity:
 
     """A superclass to both targets and weapon systems. Has a location.
+
+    Not sure if I actually need it, but it is a convienient place to store the
+    distance method.
     """
 
     def __init__(self, location: tuple[float, float]):
         self.location: tuple[float, float] = location
-
-    def process_tick(self):
-        print("Base Class Tick Process Message")
 
     def distance(self, other) -> float:
         return(gd.great_circle(self.location, other.location).km)
@@ -38,59 +38,71 @@ class Target(SimEntity):
     """A target in the sim.
     """
 
-    def __init__(self, location: tuple[float, float],
-                 radius: int, priority: int, name: str):
+    def __init__(self,
+                 type: str,
+                 name: str,
+                 location: tuple[float, float],
+                 radius: int,
+                 priority: int):
         self.location: tuple[float, float] = location
         self.area: float = radius ** 2 * math.pi
         self.priority: int = priority
         self.radius: int = radius
         self.name: str = name
+        self.type: str = type
 
 
 class Weapon:
 
-    """A munition fired from a weapon system
+    """A munition fired from a weapon system.
     """
 
     def __init__(self,
                  range: int,
-                 burst_radius: int,
+                 burst_radius: dict[str,float],
                  reliability: float,
-                 jkw_prob: float,
+                 jkw_prob: dict[str,float],
                  cep: int,
                  cost: float,
                  type: str):
         self.range:int = range
-        self.burst_radius: int = burst_radius
-        self.burst_area: float = burst_radius ** 2 * math.pi
+        self.burst_radius: dict[str,float] = burst_radius
         self.reliability: float = reliability
-        self.jkw_prob: float = jkw_prob
+        self.jkw_prob: dict[str,float] = jkw_prob
         self.cep: int = cep
         self.cost: float = cost
         self.type: str = type
 
+    def burst(self, tgt: Target) -> float:
+        return(self.burst_radius[tgt.type])
+
+    def jkw(self, tgt: Target) -> float:
+        return(self.jkw_prob[tgt.type])
+
 
 class WeaponSystem(SimEntity):
 
-    """A weapon system in the sim
+    """A weapon system in the sim.
     """
 
     def __init__(self,
                  location: tuple[float, float],
                  weapons: list[Weapon],
-                 name: str):
-        self.location = location
-        self.weapons = weapons
-        self.name = name
+                 name: str,
+                 ammo: list[int]):
+        self.location: tuple[float, float] = location
+        self.weapons: list[Weapon] = weapons
+        self.name: str = name
+        self.ammo: list[int] = ammo
 
 
     def weight(self, tgt: Target, weapon: int) -> float:
         wpn = self.weapons[weapon]
         factor_weights = self.targeting_weights
         cost_factor = wpn.cost/self.highest_cost/factor_weights["cost"]
-        jkw_factor = (1-wpn.jkw_prob)/factor_weights["jkw"]
+        jkw_factor = (1-wpn.jkw(tgt))/factor_weights["jkw"]
         reliability_factor = (1-wpn.reliability)/factor_weights["reliability"]
-        burst_delta = (wpn.burst_radius - tgt.radius)/wpn.burst_radius
+        burst_delta = (wpn.burst(tgt) - tgt.radius)/wpn.burst(tgt)
         if burst_delta > 0:
             cd_factor = burst_delta/factor_weights["cd"]
         else:
@@ -118,6 +130,7 @@ class F15(WeaponSystem):
                  location: tuple[float, float],
                  weapons: list[Weapon],
                  name: str,
+                 ammo: list[int],
                  take_off_reliability: float,
                  flight_reliability: float,
                  ada_reliability: float,
@@ -126,6 +139,7 @@ class F15(WeaponSystem):
         self.location: tuple[float, float] = location
         self.weapons: list[Weapon] = weapons
         self.name: str = name
+        self.ammo: list[int] = ammo
         self.take_off_reliability: float = take_off_reliability
         self.flight_reliability: float = flight_reliability
         self.ada_reliability: float = ada_reliability
@@ -154,13 +168,17 @@ class F15(WeaponSystem):
         else:
             return(self.fuel_dist + wpn.range)
 
-
-def main():
+    def weight(self, tgt: Target, weapon: int) -> float:
+        # TODO Add logic for going into ADA bubble
+        return(super(F15, self).weight(tgt, weapon))
 
-    """Main Loop.
+
+def scenario_1():
+
+    """Main Loop for Scenario One.
     """
 
-    # Load Targets
+    # Load Targets TODO redo
     targets: list[Target] = []
     with open("./target_lat_lon.csv", mode="r") as f:
         csv_tgts = list(csv.reader(f))
@@ -168,9 +186,9 @@ def main():
             name = line[1]
             lat = float(line[2])
             lon = float(line[3])
-            targets += [Target((lat,lon),0,0,name)]
+            targets.append(Target("CT","CT1",(lat,lon),0,0))
 
-    #Load MLRS
+    # Load MLRS TODO redo
     mlrs: list[WeaponSystem] = []
     with open("./MLRS_BN_lat_lon.csv", mode="r") as f:
         csv_mlrs = list(csv.reader(f))
@@ -178,7 +196,57 @@ def main():
             name = line[1]
             lat = float(line[2])
             lon = float(line[3])
-            mlrs += [WeaponSystem((lat,lon),[],name)]
+            mlrs += [WeaponSystem((lat,lon),[],name,[1])]
+
+    # Load SAMS
+    sams: list[Target] = []
+    sam_radars: list[Target] = []
+    with open("./sams.csv", mode="r") as f:
+        csv_sams = list(csv.reader(f))
+        for i, line in enumerate(csv_sams[1:]):
+            type,name,lat,lon,radius,priority = line
+            lat = float(lat)
+            lon = float(lon)
+            radius = int(radius)
+            priority = int(priority)
+            sam_radars.append(Target(type,name,(lat,lon),radius,priority))
+
+            # Add a SAM site within 50km of the radar at random
+            new_lat = lat - 0.5 + random.random()
+            new_lon = lon - 0.5 + random.random()
+            while (gd.great_circle((lat,lon),new_lat,new_lon).km > 50):
+                new_lat = lat - 0.5 + random.random()
+                new_lon = lon - 0.5 + random.random()
+            sams.append(Target("SAM","SAM " + str(i),
+                               (new_lat, new_lon), radius, priority))
+
+    # Load Weapon Types
+    weapons: dict[str,Weapon] = {}
+    with open("./wpn_stats.csv", mode="r") as f:
+        csv_wpns = list(csv.reader(f))
+        current_wpn = csv_wpns[1][0]
+        wpn = current_wpn
+        range = 0
+        burst: dict[str,float] = {}
+        reliability = 0
+        jkw: dict[str,float] = {}
+        cep = 0
+        cost = 0
+        for line in csv_wpns[1:]:
+            wpn = line[0]
+            if wpn != current_wpn:
+                weapons[current_wpn] = Weapon(range,burst,reliability,
+                                              jkw,cep,cost,current_wpn)
+                burst = {}
+                jkw = {}
+            wpn, tgt, burst_r, jkw_p, reliability, range, cep, cost = line
+            reliability = float(reliability)
+            cep = int(cep)
+            cost = int(cost)
+            range = int(range)
+            jkw[tgt] = float(jkw_p)
+            burst[tgt] = float(burst_r)
+        weapons[wpn] = Weapon(range,burst,reliability,jkw,cep,cost,wpn)
 
 
 def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):

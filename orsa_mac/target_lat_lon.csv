@@ -1,101 +1,90 @@
-﻿type,name,lat,lon
-MRMB,MRMB 1,33.8408,-110.617
-MRMB,MRMB 2,32.613,-108.943
-MRMB,MRMB 3,32.0692,-106.745
-MRMB,MRMB 4,37.2908,-100.084
-MRMB,MRMB 5,33.7268,-99.076
-CT,Communications Tower 1,33.6864,-111.791
-CT,Communications Tower 2,32.3294,-110.894
-CT,Communications Tower 3,35.6943,-105.801
-CT,Communications Tower 4,35.2292,-106.709
-CT,Communications Tower 5,31.8545,-106.101
-CT,Communications Tower 6,35.2177,-101.793
-CT,Communications Tower 7,31.7543,-102.151
-CT,Communications Tower 8,32.5272,-99.61
-CT,Communications Tower 9,35.5165,-97.5116
-CT,Communications Tower 10,36.1694,-95.7826
-CT,Communications Tower 11,39.0174,-94.7808
-CT,Communications Tower 12,38.7036,-90.3817
-CT,Communications Tower 13,32.875,-97.3112
-CT,Communications Tower 14,32.9865,-96.6902
-CT,Communications Tower 15,32.3139,-95.2101
-CT,Communications Tower 16,32.3997,-93.8648
-CT,Communications Tower 17,29.4559,-98.393
-CT,Communications Tower 18,30.3003,-97.6918
-CT,Communications Tower 19,27.6687,-97.4406
-CT,Communications Tower 20,29.8322,-95.4088
-AF,Airfield 1,33.6098,-112.261
-AF,Airfield 2,35.4078,-97.4172
-AF,Airfield 3,32.4938,-93.5975
-SAMR,SAM Radar 1,33.2857,-111.843
-SAMR,SAM Radar 2,35.2864,-107.11
-SAMR,SAM Radar 3,34.8499,-106.931
-SAMR,SAM Radar 4,34.6898,-106.256
-SAMR,SAM Radar 5,35.129,-106.137
-SAMR,SAM Radar 6,35.4871,-105.252
-SAMR,SAM Radar 7,35.4324,-102.094
-SAMR,SAM Radar 8,33.4288,-102.037
-SAMR,SAM Radar 9,37.5433,-97.5429
-SAMR,SAM Radar 10,38.9316,-94.3801
-SAMR,SAM Radar 11,38.3162,-90.5732
-SAMR,SAM Radar 12,35.1327,-97.722
-SAMR,SAM Radar 13,32.3983,-99.8103
-SAMR,SAM Radar 14,33.0392,-97.0209
-SAMR,SAM Radar 15,32.5388,-97.4106
-SAMR,SAM Radar 16,32.6038,-96.5893
-SAMR,SAM Radar 17,32.6573,-93.8792
-SAMR,SAM Radar 18,30.2001,-94.3142
-SAMR,SAM Radar 19,28.2394,-97.978
-SAMR,SAM Radar 20,29.6419,-96.5468
-SAM,SAM  1,33.2857,-111.843
-SAM,SAM  2,35.2864,-107.11
-SAM,SAM  3,34.8499,-106.931
-SAM,SAM  4,34.6898,-106.256
-SAM,SAM  5,35.129,-106.137
-SAM,SAM  6,35.4871,-105.252
-SAM,SAM  7,35.4324,-102.094
-SAM,SAM  8,33.4288,-102.037
-SAM,SAM  9,37.5433,-97.5429
-SAM,SAM  10,38.9316,-94.3801
-SAM,SAM  11,38.3162,-90.5732
-SAM,SAM  12,35.1327,-97.722
-SAM,SAM  13,32.3983,-99.8103
-SAM,SAM  14,33.0392,-97.0209
-SAM,SAM  15,32.5388,-97.4106
-SAM,SAM  16,32.6038,-96.5893
-SAM,SAM  17,32.6573,-93.8792
-SAM,SAM  18,30.2001,-94.3142
-SAM,SAM  19,28.2394,-97.978
-SAM,SAM  20,29.6419,-96.5468
-TTC,Terrorist Training Camp 1,33.9869,-112.65
-TTC,Terrorist Training Camp 2,32.7705,-106.96
-TTC,Terrorist Training Camp 3,30.0369,-103.182
-CDM,Costal Defense Missile 1,27.8816,-97.3054
-CDM,Costal Defense Missile 2,28.4684,-96.6327
-CDM,Costal Defense Missile 3,29.6849,-94.6434
-CDM,Costal Defense Missile 4,29.1124,-95.4305
-RB,Rocket Battery 1,36.5029,-106.881
-RB,Rocket Battery 2,36.6675,-106.022
-RB,Rocket Battery 3,36.8321,-104.606
-RB,Rocket Battery 4,38.4837,-101.693
-RB,Rocket Battery 5,34.5421,-92.4066
-RB,Rocket Battery 6,31.3824,-93.4106
-RB,Rocket Battery 7,29.2269,-98.4932
-RB,Rocket Battery 8,30.4291,-96.418
-RB,Rocket Battery 9,35.4367,-105.536
-RB,Rocket Battery 10,32.4871,-92.78
-INCO,Infantry Company 1,36.9323,-104.391
-INCO,Infantry Company 2,35.3365,-107.475
-INCO,Infantry Company 3,35.9376,-106.595
-INCO,Infantry Company 4,36.3527,-105.579
-INCO,Infantry Company 5,37.4761,-105.135
-INCO,Infantry Company 6,32.6787,-93.6353
-INCO,Infantry Company 7,32.4191,-94.8297
-INCO,Infantry Company 8,33.3953,-94.165
-INCO,Infantry Company 9,33.063,-96.0448
-INCO,Infantry Company 10,32.5125,-96.8757
-INCO,Infantry Company 11,29.5381,-95.2804
-INCO,Infantry Company 12,27.9491,-97.5549
-INCO,Infantry Company 13,30.1301,-97.773
-INCO,Infantry Company 14,29.9847,-94.1484
-INCO,Infantry Company 15,28.8007,-97.0044
+﻿type,name,lat,lon,radius
+MRMB,MRMB 1,33.8408,-110.617,28
+MRMB,MRMB 2,32.613,-108.943,28
+MRMB,MRMB 3,32.0692,-106.745,28
+MRMB,MRMB 4,37.2908,-100.084,28
+MRMB,MRMB 5,33.7268,-99.076,28
+CT,Communications Tower 1,33.6864,-111.791,56
+CT,Communications Tower 2,32.3294,-110.894,56
+CT,Communications Tower 3,35.6943,-105.801,56
+CT,Communications Tower 4,35.2292,-106.709,56
+CT,Communications Tower 5,31.8545,-106.101,56
+CT,Communications Tower 6,35.2177,-101.793,56
+CT,Communications Tower 7,31.7543,-102.151,56
+CT,Communications Tower 8,32.5272,-99.61,56
+CT,Communications Tower 9,35.5165,-97.5116,56
+CT,Communications Tower 10,36.1694,-95.7826,56
+CT,Communications Tower 11,39.0174,-94.7808,56
+CT,Communications Tower 12,38.7036,-90.3817,56
+CT,Communications Tower 13,32.875,-97.3112,56
+CT,Communications Tower 14,32.9865,-96.6902,56
+CT,Communications Tower 15,32.3139,-95.2101,56
+CT,Communications Tower 16,32.3997,-93.8648,56
+CT,Communications Tower 17,29.4559,-98.393,56
+CT,Communications Tower 18,30.3003,-97.6918,56
+CT,Communications Tower 19,27.6687,-97.4406,56
+CT,Communications Tower 20,29.8322,-95.4088,56
+AF,Luke 1,33.6098,-112.261,2500
+AF,Luke 2,33.6098,-112.261,2500
+AF,Luke 3,33.6098,-112.261,2500
+AF,Luke 4,33.6098,-112.261,2500
+AF,Luke 5,33.6098,-112.261,2500
+AF,Luke 6,33.6098,-112.261,2500
+AF,Luke 7,33.6098,-112.261,2500
+AF,Luke 8,33.6098,-112.261,2500
+AF,Luke 9,33.6098,-112.261,2500
+AF,Luke 10,33.6098,-112.261,2500
+AF,Tinker 1,35.4078,-97.4172,2500
+AF,Tinker 2,35.4078,-97.4172,2500
+AF,Tinker 3,35.4078,-97.4172,2500
+AF,Tinker 4,35.4078,-97.4172,2500
+AF,Tinker 5,35.4078,-97.4172,2500
+AF,Tinker 6,35.4078,-97.4172,2500
+AF,Barksdale 1,32.4938,-93.5975,2500
+AF,Barksdale 2,32.4938,-93.5975,2500
+AF,Barksdale 3,32.4938,-93.5975,2500
+AF,Barksdale 4,32.4938,-93.5975,2500
+AF,Barksdale 5,32.4938,-93.5975,2500
+AF,Barksdale 6,32.4938,-93.5975,2500
+AF,Barksdale 7,32.4938,-93.5975,2500
+TTC,Terrorist Training Camp 1-1,33.9869,-112.65,1382
+TTC,Terrorist Training Camp 1-2,33.9869,-112.65,1382
+TTC,Terrorist Training Camp 1-3,33.9869,-112.65,1382
+TTC,Terrorist Training Camp 2-1,32.7705,-106.96,846
+TTC,Terrorist Training Camp 2-2,32.7705,-106.96,846
+TTC,Terrorist Training Camp 2-3,32.7705,-106.96,846
+TTC,Terrorist Training Camp 3-1,30.0369,-103.182,846
+TTC,Terrorist Training Camp 3-2,30.0369,-103.182,846
+TTC,Terrorist Training Camp 3-3,30.0369,-103.182,846
+TTC,Terrorist Training Camp 3-4,30.0369,-103.182,846
+TTC,Terrorist Training Camp 3-5,30.0369,-103.182,846
+TTC,Terrorist Training Camp 3-6,30.0369,-103.182,846
+CDM,Costal Defense Missile 1,27.8816,-97.3054,28
+CDM,Costal Defense Missile 2,28.4684,-96.6327,28
+CDM,Costal Defense Missile 3,29.6849,-94.6434,28
+CDM,Costal Defense Missile 4,29.1124,-95.4305,28
+RB,Rocket Battery 1,36.5029,-106.881,564
+RB,Rocket Battery 2,36.6675,-106.022,564
+RB,Rocket Battery 3,36.8321,-104.606,564
+RB,Rocket Battery 4,38.4837,-101.693,564
+RB,Rocket Battery 5,34.5421,-92.4066,564
+RB,Rocket Battery 6,31.3824,-93.4106,564
+RB,Rocket Battery 7,29.2269,-98.4932,564
+RB,Rocket Battery 8,30.4291,-96.418,564
+RB,Rocket Battery 9,35.4367,-105.536,564
+RB,Rocket Battery 10,32.4871,-92.78,564
+INCO,Infantry Company 1,36.9323,-104.391,282
+INCO,Infantry Company 2,35.3365,-107.475,282
+INCO,Infantry Company 3,35.9376,-106.595,282
+INCO,Infantry Company 4,36.3527,-105.579,282
+INCO,Infantry Company 5,37.4761,-105.135,282
+INCO,Infantry Company 6,32.6787,-93.6353,282
+INCO,Infantry Company 7,32.4191,-94.8297,282
+INCO,Infantry Company 8,33.3953,-94.165,282
+INCO,Infantry Company 9,33.063,-96.0448,282
+INCO,Infantry Company 10,32.5125,-96.8757,282
+INCO,Infantry Company 11,29.5381,-95.2804,282
+INCO,Infantry Company 12,27.9491,-97.5549,282
+INCO,Infantry Company 13,30.1301,-97.773,282
+INCO,Infantry Company 14,29.9847,-94.1484,282
+INCO,Infantry Company 15,28.8007,-97.0044,282
