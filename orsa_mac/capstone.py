@@ -82,6 +82,7 @@ class Weapon:
 class WeaponSystem(SimEntity):
 
     """A weapon system in the sim.
+
     """
 
     def __init__(self,
@@ -112,6 +113,17 @@ class WeaponSystem(SimEntity):
 
     def range(self, weapon: int) -> float:
         return(self.weapons[weapon].range)
+
+    def engage(self, weapon: int, target: Target): -> bool:
+
+        """Engages target with selected weapon.
+
+        Decrements ammo for weapon used, and removes them from the list once
+        they are expended.
+
+        """
+
+        pass # TODO make function
 
     targeting_weights = {"cost": 1,
                          "cd": 1,
@@ -210,9 +222,9 @@ def scenario_1():
     with open("./MLRS_BN_lat_lon_30.csv", mode="r") as f:
         csv_mlrs = list(csv.reader(f))
         for line in csv_mlrs[1:]:
-            type,name,lat,lon,ammo = line
+            type,name,lat,lon,ammo,wpn = line
             mlrs.append(WeaponSystem((float(lat),float(lon)),
-                                     [weapons["ATACM"]],name,[int(ammo)]))
+                                     [weapons[wpn]],name,[int(ammo)]))
 
     # Load DDG
     ddg: list[WeaponSystem] = []
@@ -230,6 +242,14 @@ def scenario_1():
                                     name,
                                     [int(t2_a),int(t3_a),
                                      int(slam_a),int(slamer_a)]))
+
+    # Load F-15s
+    f_15s: list[WeaponSystem] = []
+    with open("usaf.csv", mode="r") as f:
+        csv_usaf = list(csv.reader(f))
+        for line in csv_usaf[1:]:
+            pass
+
 
     # Load Targets
     targets: list[Target] = []
