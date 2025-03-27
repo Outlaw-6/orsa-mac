@@ -93,11 +93,14 @@ class WeaponSystem(SimEntity):
                  location: tuple[float, float],
                  weapons: list[Weapon],
                  name: str,
-                 ammo: list[int]):
+                 ammo: list[int],
+                 time_to_reload: int):
         self.location: tuple[float, float] = location
         self.weapons: list[Weapon] = weapons
         self.name: str = name
         self.ammo: list[int] = ammo
+        self.time_to_reload = time_to_reload
+        self.rounds_until_reload = time_to_reload
 
 
     def weight(self, tgt: Target, weapon: int) -> float:
@@ -118,6 +121,7 @@ class WeaponSystem(SimEntity):
     def range(self, weapon: int) -> float:
         return(self.weapons[weapon].range)
 
+
     def engage(self, weapon: int, target: Target) -> bool:
 
         """Engages target with selected weapon.
@@ -129,15 +133,17 @@ class WeaponSystem(SimEntity):
 
         wpn = self.weapons[weapon]
         self.ammo[weapon] -= 1
+        self.rounds_until_reload -= 1
         if self.ammo[weapon] < 1:
             del(self.ammo[weapon])
             del(self.weapons[weapon])
         return(random.random() < wpn.jkw(target))
 
-    targeting_weights = {"cost": 1,
-                         "cd": 1,
-                         "reliability": 1,
-                         "jkw": 2}
+
+    targeting_weights = {"cost": 0.1,
+                         "cd": 0.2,
+                         "reliability": 0.2,
+                         "jkw": 0.5}
 
 
 
@@ -157,7 +163,8 @@ class F15(WeaponSystem):
                  ada_reliability: float,
                  engage_reliability: float,
                  fuel_dist: float,
-                 sams: list[Target]):
+                 sams: list[Target],
+                 time_to_reload: int):
         self.location: tuple[float, float] = location
         self.weapons: list[Weapon] = weapons
         self.name: str = name
@@ -168,6 +175,7 @@ class F15(WeaponSystem):
         self.engage_reliability: float = engage_reliability
         self.fuel_dist: float = fuel_dist
         self.sams: list[Target] = sams
+        self.time_to_reload = time_to_reload
 
     def update_location(self, location: tuple[float, float]):
         distance = self.distance(location)
@@ -247,15 +255,10 @@ class F15(WeaponSystem):
             return(random.random() < wpn.jkw(target))
 
 
-def scenario_1_load_objects():
-
-    """Load scenario objects for scenario 1.
-
-    """
-
     # Load Weapon Types
+def load_weapons(weapon_csv: str) -> dict[str,Weapon]:
     weapons: dict[str,Weapon] = {}
-    with open("./wpn_stats.csv", mode="r") as f:
+    with open(weapon_csv, mode="r") as f:
         csv_wpns = list(csv.reader(f))
         current_wpn = csv_wpns[1][0]
         wpn = current_wpn
@@ -282,19 +285,24 @@ def scenario_1_load_objects():
             jkw[tgt] = float(jkw_p)
             burst[tgt] = float(burst_r)
         weapons[wpn] = Weapon(range,burst,reliability,jkw,cep,cost,wpn)
+    return(weapons)
 
     # Load MLRS
+def load_mlrs(army_csv: str, weapons: dict[str,Weapon]) -> list[WeaponSystem]:
     mlrs: list[WeaponSystem] = []
-    with open("./MLRS_BN_lat_lon_30.csv", mode="r") as f:
+    with open(army_csv, mode="r") as f:
         csv_mlrs = list(csv.reader(f))
         for line in csv_mlrs[1:]:
-            type,name,lat,lon,ammo,wpn = line
+            _type,name,lat,lon,ammo,wpn,ttr = line
             mlrs.append(WeaponSystem((float(lat),float(lon)),
-                                     [weapons[wpn]],name,[int(ammo)]))
+                                     [weapons[wpn]],name,[int(ammo)],
+                                     int(ttr)))
+    return(mlrs)
 
     # Load DDG
+def load_ddg(navy_csv: str, weapons: dict[str,Weapon]) -> list[WeaponSystem]:
     ddg: list[WeaponSystem] = []
-    with open("./ddg.csv", mode="r") as f:
+    with open(navy_csv, mode="r") as f:
         csv_ddg = list(csv.reader(f))
         t2,t3,slam,slamer = csv_ddg[0][4:]
         t2 = weapons[t2]
@@ -302,26 +310,31 @@ def scenario_1_load_objects():
         slam = weapons[slam]
         slamer = weapons[slamer]
         for line in csv_ddg[1:]:
-            type,name,lat,lon,t2_a,t3_a,slam_a,slamer_a = line
+            _type,name,lat,lon,t2_a,t3_a,slam_a,slamer_a,ttr = line
             ddg.append(WeaponSystem((float(lat),float(lon)),
                                     [t2,t3,slam,slamer],
                                     name,
                                     [int(t2_a),int(t3_a),
-                                     int(slam_a),int(slamer_a)]))
+                                     int(slam_a),int(slamer_a)],
+                                    int(ttr)))
+    return(ddg)
 
     # Load Targets
+def load_targets(target_csv: str) -> list[Target]:
     targets: list[Target] = []
-    with open("./target_lat_lon.csv", mode="r") as f:
+    with open(target_csv, mode="r") as f:
         csv_tgts = list(csv.reader(f))
         for line in csv_tgts[1:]:
             type,name,lat,lon,radius,priority = line
             targets.append(Target(type,name,(float(lat),float(lon)),
                                   int(radius),int(priority)))
+    return(targets)
 
     # Load SAMS
+def load_sams(sam_csv: str) -> list[Target]:
     sams: list[Target] = []
     sam_radars: list[Target] = []
-    with open("./sams.csv", mode="r") as f:
+    with open(sam_csv, mode="r") as f:
         csv_sams = list(csv.reader(f))
         for i, line in enumerate(csv_sams[1:]):
             type,name,lat,lon,radius,priority = line
@@ -339,10 +352,14 @@ def scenario_1_load_objects():
                 new_lon = lon - 0.5 + random.random()
             sams.append(Target("SAM","SAM " + str(i),
                                (new_lat, new_lon), radius, priority))
+    return(sams)
 
     # Load F-15s
-    f_15s: list[WeaponSystem] = []
-    with open("usaf.csv", mode="r") as f:
+def load_f_15s(usaf_csv: str,
+               weapons: dict[str,Weapon],
+               sams: list[Target]) -> list[F15]:
+    f_15s: list[F15] = []
+    with open(usaf_csv, mode="r") as f:
         csv_usaf = list(csv.reader(f))
         GBU39,GBU10,JASSM,JASSMER = csv_usaf[0][4:8]
         GBU39 = weapons[GBU39]
@@ -350,7 +367,7 @@ def scenario_1_load_objects():
         JASSM = weapons[JASSM]
         JASSMER = weapons[JASSMER]
         for line in csv_usaf[1:]:
-            type,name,lat,lon,g_39_a,g_10_a,j_a,j_er_a,t_o,fly,ada,engage = line
+            _type,name,lat,lon,g_39_a,g_10_a,j_a,j_er_a,t_o,fly,ada,engage,ttr= line
             if int(j_er_a) == 0:
                 wpn = [GBU39,GBU10,JASSM]
                 ammo = [int(g_39_a), int(g_10_a), int(j_a)]
@@ -360,9 +377,9 @@ def scenario_1_load_objects():
             f_15s.append(F15((float(lat),float(lon)),
                              wpn, name, ammo,
                              float(t_o),float(fly),float(ada),float(engage),
-                             1250, sams))
+                             1250, sams, int(ttr)))
 
-    return([weapons, mlrs, ddg, f_15s, targets, sam_radars, sams])
+    return(f_15s)
 
 
 def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
@@ -377,7 +394,7 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
     """
 
-    m = 10
+    m = 20
 
     n_tgts = len(tgts)
     n_wpns = len(wpn_systems)
@@ -417,7 +434,7 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
     # Add target constraint RHS
     for j, tgt in enumerate(tgts):
         constraints_rhs[j+n_wpns] = -1
-
+
     # Add dummy node
     for j, tgt in enumerate(tgts):
         # Add dummy node coefficients
