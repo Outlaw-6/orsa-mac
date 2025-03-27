@@ -75,6 +75,10 @@ class Weapon:
     def burst(self, tgt: Target) -> float:
         return(self.burst_radius[tgt.type])
 
+    def area(self, tgt: Target) -> float:
+        burst_r = self.burst_radius[tgt.type]
+        return(burst_r ** 2 * math.pi)
+
     def jkw(self, tgt: Target) -> float:
         return(self.jkw_prob[tgt.type])
 
@@ -102,7 +106,7 @@ class WeaponSystem(SimEntity):
         cost_factor = wpn.cost/self.highest_cost/factor_weights["cost"]
         jkw_factor = (1-wpn.jkw(tgt))/factor_weights["jkw"]
         reliability_factor = (1-wpn.reliability)/factor_weights["reliability"]
-        burst_delta = (wpn.burst(tgt) - tgt.radius)/wpn.burst(tgt)
+        burst_delta = (wpn.area(tgt) - tgt.area)/wpn.area(tgt)
         if burst_delta > 0:
             cd_factor = burst_delta/factor_weights["cd"]
         else:
@@ -114,7 +118,7 @@ class WeaponSystem(SimEntity):
     def range(self, weapon: int) -> float:
         return(self.weapons[weapon].range)
 
-    def engage(self, weapon: int, target: Target): -> bool:
+    def engage(self, weapon: int, target: Target) -> bool:
 
         """Engages target with selected weapon.
 
@@ -123,7 +127,12 @@ class WeaponSystem(SimEntity):
 
         """
 
-        pass # TODO make function
+        wpn = self.weapons[weapon]
+        self.ammo[weapon] -= 1
+        if self.ammo[weapon] < 1:
+            del(self.ammo[weapon])
+            del(self.weapons[weapon])
+        return(random.random() < wpn.jkw(target))
 
     targeting_weights = {"cost": 1,
                          "cd": 1,
@@ -135,6 +144,7 @@ class WeaponSystem(SimEntity):
 class F15(WeaponSystem):
 
     """An F15. They have special rules.
+
     """
 
     def __init__(self,
@@ -146,7 +156,8 @@ class F15(WeaponSystem):
                  flight_reliability: float,
                  ada_reliability: float,
                  engage_reliability: float,
-                 fuel_dist: float):
+                 fuel_dist: float,
+                 sams: list[Target]):
         self.location: tuple[float, float] = location
         self.weapons: list[Weapon] = weapons
         self.name: str = name
@@ -156,12 +167,30 @@ class F15(WeaponSystem):
         self.ada_reliability: float = ada_reliability
         self.engage_reliability: float = engage_reliability
         self.fuel_dist: float = fuel_dist
+        self.sams: list[Target] = sams
 
     def update_location(self, location: tuple[float, float]):
         distance = self.distance(location)
         if distance > self.fuel_dist:
             print("past fuel range") # TODO put an actual fuel system here
-        self.location = location
+            self.fuel_dist -= distance
+            self.location = location
+
+    def _jassm_fly_loc(self, target: Target, range: float) -> tuple[float, float]:
+        x1, y1 = target.location
+        d = self.distance(target)
+        t = range/d
+        xt = (1-t)*x1 + t*x1
+        yt = (1-t)*y1 + t*y1
+        return((xt,yt))
+
+    def _inside_ada(self, obj: SimEntity) -> bool:
+        for sam in self.sams:
+            if sam.distance(obj) < 250:
+                return(True)
+            else:
+                return(False)
+        return(False)
 
     def take_off(self) -> bool:
         return(random.random() < self.take_off_reliability)
@@ -169,8 +198,20 @@ class F15(WeaponSystem):
     def fly(self) -> bool:
         return(random.random() < self.flight_reliability)
 
-    def penetrate_ada(self) -> bool:
-        return(random.random() < self.ada_reliability)
+    def penetrate_ada(self, target: Target, weapon: int) -> bool:
+        wpn: Weapon = self.weapons[weapon]
+
+        bomb: bool = wpn.type == "GBU10" or wpn.type == "GBU39"
+        now_in_ada = self._inside_ada(self)
+        tgt_in_ada = self._inside_ada(target)
+
+        if (bomb and tgt_in_ada) or now_in_ada:
+            return(random.random() < self.ada_reliability)
+        else:
+            return(True)
+
+    def after_engage_fly(self) -> bool:
+        return(random.random() < self.engage_reliability)
 
     def range(self, weapon: int) -> float:
         wpn = self.weapons[weapon]
@@ -180,13 +221,36 @@ class F15(WeaponSystem):
             return(self.fuel_dist + wpn.range)
 
     def weight(self, tgt: Target, weapon: int) -> float:
-        # TODO Add logic for going into ADA bubble
-        return(super(F15, self).weight(tgt, weapon))
+        ada = 0
+        if self._inside_ada(tgt):
+            ada = 0.5
+        return(super(F15, self).weight(tgt, weapon) + ada)
+
+    def engage(self, weapon: int, target: Target) -> bool:
+        wpn = self.weapons[weapon]
+
+        # Update locations
+        if wpn.type == "GBU39" or wpn.type == "GBU10":
+            self.update_location(target.location)
+        elif self.distance(target) < wpn.range:
+            self.update_location(self._jassm_fly_loc(target, wpn.range))
+
+        if wpn.type == "GBU39":
+            return(super(F15, self).engage(weapon, target))
+        else:
+            for i, w in enumerate(self.weapons):
+                if w.type != "GBU10":
+                    self.ammo[i] -= 1
+                if self.ammo[i] == 0:
+                    del(self.ammo[i])
+                    del(self.weapons[i])
+            return(random.random() < wpn.jkw(target))
 
 
-def scenario_1():
+def scenario_1_load_objects():
 
-    """Main Loop for Scenario One.
+    """Load scenario objects for scenario 1.
+
     """
 
     # Load Weapon Types
@@ -204,10 +268,12 @@ def scenario_1():
         for line in csv_wpns[1:]:
             wpn = line[0]
             if wpn != current_wpn:
+                print(current_wpn)
                 weapons[current_wpn] = Weapon(range,burst,reliability,
                                               jkw,cep,cost,current_wpn)
                 burst = {}
                 jkw = {}
+                current_wpn = wpn
             wpn, tgt, burst_r, jkw_p, reliability, range, cep, cost = line
             reliability = float(reliability)
             cep = int(cep)
@@ -242,14 +308,6 @@ def scenario_1():
                                     name,
                                     [int(t2_a),int(t3_a),
                                      int(slam_a),int(slamer_a)]))
-
-    # Load F-15s
-    f_15s: list[WeaponSystem] = []
-    with open("usaf.csv", mode="r") as f:
-        csv_usaf = list(csv.reader(f))
-        for line in csv_usaf[1:]:
-            pass
-
 
     # Load Targets
     targets: list[Target] = []
@@ -276,11 +334,35 @@ def scenario_1():
             # Add a SAM site within 50km of the radar at random
             new_lat = lat - 0.5 + random.random()
             new_lon = lon - 0.5 + random.random()
-            while (gd.great_circle((lat,lon),new_lat,new_lon).km > 50):
+            while (gd.great_circle((lat,lon),(new_lat,new_lon)).km > 50):
                 new_lat = lat - 0.5 + random.random()
                 new_lon = lon - 0.5 + random.random()
             sams.append(Target("SAM","SAM " + str(i),
                                (new_lat, new_lon), radius, priority))
+
+    # Load F-15s
+    f_15s: list[WeaponSystem] = []
+    with open("usaf.csv", mode="r") as f:
+        csv_usaf = list(csv.reader(f))
+        GBU39,GBU10,JASSM,JASSMER = csv_usaf[0][4:8]
+        GBU39 = weapons[GBU39]
+        GBU10 = weapons[GBU10]
+        JASSM = weapons[JASSM]
+        JASSMER = weapons[JASSMER]
+        for line in csv_usaf[1:]:
+            type,name,lat,lon,g_39_a,g_10_a,j_a,j_er_a,t_o,fly,ada,engage = line
+            if int(j_er_a) == 0:
+                wpn = [GBU39,GBU10,JASSM]
+                ammo = [int(g_39_a), int(g_10_a), int(j_a)]
+            else:
+                wpn = [GBU39,GBU10,JASSM,JASSMER]
+                ammo = [int(g_39_a), int(g_10_a), int(j_a), int(j_er_a)]
+            f_15s.append(F15((float(lat),float(lon)),
+                             wpn, name, ammo,
+                             float(t_o),float(fly),float(ada),float(engage),
+                             1250, sams))
+
+    return([weapons, mlrs, ddg, f_15s, targets, sam_radars, sams])
 
 
 def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
@@ -348,11 +430,6 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
             coefficients[index] = 1
         index += 1
 
-    # TODO remove these debugging prints
-    print(f"LHS: {constraints_lhs}")
-    print(f"RHS: {constraints_rhs}")
-    print(f"c: {coefficients}")
-
     # Send to the Solver
     res = opt.linprog(c=coefficients, A_ub=constraints_lhs, b_ub=constraints_rhs,
                       bounds=(0,1), integrality=1)
@@ -367,3 +444,33 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
                 index += 1
 
     return(results)
+
+
+def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]):
+    destroyed: list[Target] = []
+    hits: list[tuple[WeaponSystem, Target]] = []
+    miss: list[tuple[WeaponSystem, Target]] = []
+    f_15_down: list[tuple[F15, Target]] = []
+
+    for pair in pairings:
+        wpn_sys, tgt, wpn_index = pair
+        if isinstance(wpn_sys, F15):
+            # Do F-15 things. Break if destroyed.
+            if not wpn_sys.fly():
+                f_15_down.append((wpn_sys, tgt))
+                break
+            if not wpn_sys.penetrate_ada(tgt, wpn_index):
+                f_15_down.append((wpn_sys, tgt))
+                break
+        if wpn_sys.engage(wpn_index, tgt):
+            # destroy target
+            hits.append((wpn_sys, tgt))
+            destroyed.append(tgt)
+        else:
+            # mark a miss
+            miss.append((wpn_sys, tgt))
+        if isinstance(wpn_sys, F15):
+            if not wpn_sys.after_engage_fly():
+                f_15_down.append((wpn_sys, tgt))
+
+    return([hits,miss,destroyed,f_15_down])
