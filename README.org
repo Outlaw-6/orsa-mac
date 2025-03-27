@@ -3,11 +3,11 @@
 :ID:       2e7a76a2-d48c-4695-a755-f38618d24ed5
 :END:
 
-* [ ] What still needs doing [1/6]:
+* [ ] What still needs doing [2/8]:
 :PROPERTIES:
 :ID:       1da0159e-7a23-4d84-89a2-db6f66fe47ab
 :END:
-** [ ] Adding stats [4/5]
+** [ ] Adding stats [5/5]
 :PROPERTIES:
 :ID:       baee5743-90cd-4117-94e2-857d30052232
 :END:
@@ -25,13 +25,13 @@
     - [X] Weapons per by type
   - [X] Code to eat it
 - [X] Navy
-- [ ] F-15s [0/2]
-  - [ ] CSV [0/4]
-    - [ ] Type
-    - [ ] Name
-    - [ ] Location
-    - [ ] Weapons per by type
-  - [ ] Code to eat it
+- [X] F-15s [2/2]
+  - [X] CSV [4/4]
+    - [X] Type
+    - [X] Name
+    - [X] Location
+    - [X] Weapons per by type
+  - [X] Code to eat it
 - [X] Weapons [2/2]
   - [X] CSV [5/5]
     - [X] Burst radius by target type
@@ -50,9 +50,17 @@ Should be 11 types. Need to make a enum/dict/something to use as a reference int
 :ID:       89b95e66-cfe4-4f30-bdbf-b230c6c878b5
 :END:
 I'm almost there -- just need to feed the array's I've built into a linear solver.
-** [ ] Engagement Simulation Step
+** [X] Engagement Simulation Step
 :PROPERTIES:
 :ID:       35482981-40cb-4ba6-83e9-f600798b69c4
+:END:
+** [ ] Update target and munitions list
+:PROPERTIES:
+:ID:       02bb1243-9903-49af-b69b-edde9fbe2ecf
+:END:
+** [ ] Turn-by-turn main loop
+:PROPERTIES:
+:ID:       14453abc-7cd5-4e75-822c-b6e558166f1a
 :END:
 ** [ ] Instrumentation to record what happens in the targeting and sim
 :PROPERTIES:
