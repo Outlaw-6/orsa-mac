@@ -3,11 +3,11 @@
 :ID:       2e7a76a2-d48c-4695-a755-f38618d24ed5
 :END:
 
-* [ ] What still needs doing [2/8]:
+* [ ] What still needs doing [3/8]:
 :PROPERTIES:
 :ID:       1da0159e-7a23-4d84-89a2-db6f66fe47ab
 :END:
-** [ ] Adding stats [5/5]
+** [X] Adding stats [5/5]
 :PROPERTIES:
 :ID:       baee5743-90cd-4117-94e2-857d30052232
 :END:
