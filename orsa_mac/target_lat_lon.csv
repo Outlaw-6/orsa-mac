@@ -1,9 +1,9 @@
 ﻿type,name,lat,lon,radius,priority
-MRMB,MRMB 1,33.8408,-110.617,28,0
-MRMB,MRMB 2,32.613,-108.943,28,0
-MRMB,MRMB 3,32.0692,-106.745,28,0
-MRMB,MRMB 4,37.2908,-100.084,28,0
-MRMB,MRMB 5,33.7268,-99.076,28,0
+MRBM,MRBM 1,33.8408,-110.617,28,0
+MRBM,MRBM 2,32.613,-108.943,28,0
+MRBM,MRBM 3,32.0692,-106.745,28,0
+MRBM,MRBM 4,37.2908,-100.084,28,0
+MRBM,MRBM 5,33.7268,-99.076,28,0
 CT,Communications Tower 1,33.6864,-111.791,56,0
 CT,Communications Tower 2,32.3294,-110.894,56,0
 CT,Communications Tower 3,35.6943,-105.801,56,0
@@ -47,18 +47,18 @@ AF,Barksdale 4,32.4938,-93.5975,2500,0
 AF,Barksdale 5,32.4938,-93.5975,2500,0
 AF,Barksdale 6,32.4938,-93.5975,2500,0
 AF,Barksdale 7,32.4938,-93.5975,2500,0
-TTC,Terrorist Training Camp 1-1,33.9869,-112.65,1382,0
-TTC,Terrorist Training Camp 1-2,33.9869,-112.65,1382,0
-TTC,Terrorist Training Camp 1-3,33.9869,-112.65,1382,0
-TTC,Terrorist Training Camp 2-1,32.7705,-106.96,846,0
-TTC,Terrorist Training Camp 2-2,32.7705,-106.96,846,0
-TTC,Terrorist Training Camp 2-3,32.7705,-106.96,846,0
-TTC,Terrorist Training Camp 3-1,30.0369,-103.182,846,0
-TTC,Terrorist Training Camp 3-2,30.0369,-103.182,846,0
-TTC,Terrorist Training Camp 3-3,30.0369,-103.182,846,0
-TTC,Terrorist Training Camp 3-4,30.0369,-103.182,846,0
-TTC,Terrorist Training Camp 3-5,30.0369,-103.182,846,0
-TTC,Terrorist Training Camp 3-6,30.0369,-103.182,846,0
+House,Terrorist Training Camp 1-1,33.9869,-112.65,1382,0
+House,Terrorist Training Camp 1-2,33.9869,-112.65,1382,0
+House,Terrorist Training Camp 1-3,33.9869,-112.65,1382,0
+House,Terrorist Training Camp 2-1,32.7705,-106.96,846,0
+House,Terrorist Training Camp 2-2,32.7705,-106.96,846,0
+House,Terrorist Training Camp 2-3,32.7705,-106.96,846,0
+House,Terrorist Training Camp 3-1,30.0369,-103.182,846,0
+House,Terrorist Training Camp 3-2,30.0369,-103.182,846,0
+House,Terrorist Training Camp 3-3,30.0369,-103.182,846,0
+House,Terrorist Training Camp 3-4,30.0369,-103.182,846,0
+House,Terrorist Training Camp 3-5,30.0369,-103.182,846,0
+House,Terrorist Training Camp 3-6,30.0369,-103.182,846,0
 CDM,Costal Defense Missile 1,27.8816,-97.3054,28,0
 CDM,Costal Defense Missile 2,28.4684,-96.6327,28,0
 CDM,Costal Defense Missile 3,29.6849,-94.6434,28,0

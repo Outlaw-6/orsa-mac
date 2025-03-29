@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import csv
+from datetime import datetime
 import math
 import random
 import geopy.distance as gd
@@ -50,6 +51,19 @@ class Target(SimEntity):
         self.name: str = name
         self.type: str = type
 
+    def __eq__(self, other):
+        if isinstance(other, Target):
+            return(self.name == other.name)
+        else:
+            return(False)
+
+    def __str__(self):
+        return(self.name)
+
+    def __repr__(self):
+        return(self.name)
+
+
 
 class Weapon:
 
@@ -71,6 +85,18 @@ class Weapon:
         self.cep: int = cep
         self.cost: float = cost
         self.type: str = type
+
+    def __eq__(self, other):
+        if isinstance(other, Weapon):
+            return self.type == other.type
+        else:
+            return(False)
+
+    def __str__(self):
+        return(self.type)
+
+    def __repr__(self):
+        return(self.type)
 
     def burst(self, tgt: Target) -> float:
         return(self.burst_radius[tgt.type])
@@ -99,19 +125,31 @@ class WeaponSystem(SimEntity):
         self.weapons: list[Weapon] = weapons
         self.name: str = name
         self.ammo: list[int] = ammo
-        self.time_to_reload = time_to_reload
-        self.rounds_until_reload = time_to_reload
+        self.time_to_reload: int = time_to_reload
+        self.rounds_until_reload: int = time_to_reload
 
+
+    def __eq__(self, other):
+        if isinstance(other, WeaponSystem):
+            return(self.name == other.name)
+        else:
+            return(False)
+
+
+    def __str__(self):
+        return(self.name)
+
+    def __repr__(self):
+        return(self.name)
 
     def weight(self, tgt: Target, weapon: int) -> float:
         wpn = self.weapons[weapon]
-        factor_weights = self.targeting_weights
-        cost_factor = wpn.cost/self.highest_cost/factor_weights["cost"]
-        jkw_factor = (1-wpn.jkw(tgt))/factor_weights["jkw"]
-        reliability_factor = (1-wpn.reliability)/factor_weights["reliability"]
+        cost_factor = wpn.cost/self.highest_cost
+        jkw_factor = (1-wpn.jkw(tgt))
+        reliability_factor = (1-wpn.reliability)
         burst_delta = (wpn.area(tgt) - tgt.area)/wpn.area(tgt)
         if burst_delta > 0:
-            cd_factor = burst_delta/factor_weights["cd"]
+            cd_factor = burst_delta
         else:
             cd_factor = 0
 
@@ -120,6 +158,18 @@ class WeaponSystem(SimEntity):
 
     def range(self, weapon: int) -> float:
         return(self.weapons[weapon].range)
+
+
+    def dud(self, weapon: int) -> bool:
+        wpn = self.weapons[weapon]
+        if random.random() < wpn.reliability:
+            return(False)
+        else:
+            self.ammo[weapon] -= 1
+            if self.ammo[weapon] < 1:
+                del(self.ammo[weapon])
+                del(self.weapons[weapon])
+            return(True)
 
 
     def engage(self, weapon: int, target: Target) -> bool:
@@ -140,11 +190,12 @@ class WeaponSystem(SimEntity):
         return(random.random() < wpn.jkw(target))
 
 
-    targeting_weights = {"cost": 0.1,
-                         "cd": 0.2,
-                         "reliability": 0.2,
-                         "jkw": 0.5}
+    def ready(self) -> bool:
+        return(self.rounds_until_reload > 0)
 
+
+    def reload(self):
+        self.rounds_until_reload = self.time_to_reload
 
 
 class F15(WeaponSystem):
@@ -166,6 +217,7 @@ class F15(WeaponSystem):
                  sams: list[Target],
                  time_to_reload: int):
         self.location: tuple[float, float] = location
+        self.original_location = location
         self.weapons: list[Weapon] = weapons
         self.name: str = name
         self.ammo: list[int] = ammo
@@ -175,10 +227,11 @@ class F15(WeaponSystem):
         self.engage_reliability: float = engage_reliability
         self.fuel_dist: float = fuel_dist
         self.sams: list[Target] = sams
-        self.time_to_reload = time_to_reload
+        self.time_to_reload: int = time_to_reload
+        self.rounds_until_reload: int = time_to_reload
 
     def update_location(self, location: tuple[float, float]):
-        distance = self.distance(location)
+        distance = self.distance(SimEntity(location))
         if distance > self.fuel_dist:
             print("past fuel range") # TODO put an actual fuel system here
             self.fuel_dist -= distance
@@ -254,6 +307,13 @@ class F15(WeaponSystem):
                     del(self.weapons[i])
             return(random.random() < wpn.jkw(target))
 
+    def empty(self) -> bool:
+        return(self.fuel_dist < 125)
+
+    def refuel(self):
+        self.update_location(self.original_location)
+        self.fuel_dist = 1250
+
 
     # Load Weapon Types
 def load_weapons(weapon_csv: str) -> dict[str,Weapon]:
@@ -271,7 +331,6 @@ def load_weapons(weapon_csv: str) -> dict[str,Weapon]:
         for line in csv_wpns[1:]:
             wpn = line[0]
             if wpn != current_wpn:
-                print(current_wpn)
                 weapons[current_wpn] = Weapon(range,burst,reliability,
                                               jkw,cep,cost,current_wpn)
                 burst = {}
@@ -304,7 +363,7 @@ def load_ddg(navy_csv: str, weapons: dict[str,Weapon]) -> list[WeaponSystem]:
     ddg: list[WeaponSystem] = []
     with open(navy_csv, mode="r") as f:
         csv_ddg = list(csv.reader(f))
-        t2,t3,slam,slamer = csv_ddg[0][4:]
+        t2,t3,slam,slamer,ttr = csv_ddg[0][4:]
         t2 = weapons[t2]
         t3 = weapons[t3]
         slam = weapons[slam]
@@ -331,7 +390,7 @@ def load_targets(target_csv: str) -> list[Target]:
     return(targets)
 
     # Load SAMS
-def load_sams(sam_csv: str) -> list[Target]:
+def load_sams(sam_csv: str) -> list[list[Target]]:
     sams: list[Target] = []
     sam_radars: list[Target] = []
     with open(sam_csv, mode="r") as f:
@@ -352,7 +411,7 @@ def load_sams(sam_csv: str) -> list[Target]:
                 new_lon = lon - 0.5 + random.random()
             sams.append(Target("SAM","SAM " + str(i),
                                (new_lat, new_lon), radius, priority))
-    return(sams)
+    return([sams,sam_radars])
 
     # Load F-15s
 def load_f_15s(usaf_csv: str,
@@ -382,7 +441,8 @@ def load_f_15s(usaf_csv: str,
     return(f_15s)
 
 
-def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
+def targeting(wpn_systems: list[WeaponSystem],
+              tgts: list[Target]) -> list[tuple[WeaponSystem, Target, int]]:
 
     """Builds a linear program to solve for optimal weapon assignment.
 
@@ -465,29 +525,159 @@ def targeting(wpn_systems: list[WeaponSystem], tgts: list[Target]):
 
 def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]):
     destroyed: list[Target] = []
-    hits: list[tuple[WeaponSystem, Target]] = []
-    miss: list[tuple[WeaponSystem, Target]] = []
+    hits: list[tuple[WeaponSystem, Target, Weapon]] = []
+    miss: list[tuple[WeaponSystem, Target, Weapon]] = []
+    duds: list[tuple[WeaponSystem, Weapon]] = []
     f_15_down: list[tuple[F15, Target]] = []
+
+    record_format = ["wpn sys", "tgt", "wpn", "dud", "hit",
+                     "f15_fly", "f15_ada", "f15_engage"]
+
+    turn_record = []
 
     for pair in pairings:
         wpn_sys, tgt, wpn_index = pair
+        wpn = wpn_sys.weapons[wpn_index]
+
+        record = [wpn_sys, tgt, wpn] + [None for _ in range(5)]
         if isinstance(wpn_sys, F15):
             # Do F-15 things. Break if destroyed.
             if not wpn_sys.fly():
                 f_15_down.append((wpn_sys, tgt))
+                record[record_format.index("f15_fly")] = False
                 break
+            else:
+                record[record_format.index("f15_fly")] = True
             if not wpn_sys.penetrate_ada(tgt, wpn_index):
                 f_15_down.append((wpn_sys, tgt))
+                record[record_format.index("f15_ada")] = False
                 break
-        if wpn_sys.engage(wpn_index, tgt):
-            # destroy target
-            hits.append((wpn_sys, tgt))
-            destroyed.append(tgt)
+            else:
+                record[record_format.index("f15_ada")] = True
+        if wpn_sys.dud(wpn_index):
+            duds.append((wpn_sys, wpn))
+            record[record_format.index("dud")] = True
         else:
-            # mark a miss
-            miss.append((wpn_sys, tgt))
+            record[record_format.index("dud")] = False
+            if wpn_sys.engage(wpn_index, tgt):
+                # destroy target
+                hits.append((wpn_sys, tgt, wpn))
+                destroyed.append(tgt)
+                record[record_format.index("hit")] = True
+            else:
+                # mark a miss
+                miss.append((wpn_sys, tgt, wpn))
+                record[record_format.index("hit")] = False
         if isinstance(wpn_sys, F15):
             if not wpn_sys.after_engage_fly():
                 f_15_down.append((wpn_sys, tgt))
+                record[record_format.index("f15_engage")] = False
+            else:
+                record[record_format.index("f15_engage")] = True
+        turn_record.append(record)
 
-    return([hits,miss,destroyed,f_15_down])
+    return([hits,miss,duds,destroyed,f_15_down,turn_record])
+
+def scenario_1():
+
+    """ Execute scenario one. This is the main loop with all bookkeeping.
+
+    I'll put prints here to be able to extract data.
+
+    """
+
+    # Load all entities
+    weapons: dict[str, Weapon] = load_weapons("./wpn_stats.csv")
+    mlrs: list[WeaponSystem] = load_mlrs("./MLRS_BN_lat_lon_10.csv", weapons)
+    ddg: list[WeaponSystem] = load_ddg("./ddg.csv", weapons)
+    targets: list[Target] = load_targets("./target_lat_lon.csv")
+    sams, sam_radars = load_sams("./sams.csv")
+    f_15s: list[F15] = load_f_15s("./usaf.csv", weapons, sams)
+
+    f_15s.reverse()
+
+    destroyed_f_15s: list[F15] = []
+
+    f_15s_on_sortie: list[F15] = []
+
+    undestroyed_targets = targets + sams + sam_radars
+    destroyed_targets = []
+
+    turn = 0
+
+    filename = "./output/scenario_1_ATACM"+str(datetime.now())
+
+    record_format = ["turn", "wpn sys", "tgt", "wpn", "dud", "hit",
+                     "f15_fly", "f15_ada", "f15_engage"]
+
+    with open(filename, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(record_format)
+
+        while len(undestroyed_targets):
+
+            print("Turn {turn}".format(turn = turn + 1))
+            print("Targets Remaining: {left}".format(left = len(undestroyed_targets)))
+
+            if turn%6 == 0:
+                f_15s = f_15s_on_sortie + f_15s
+                f_15s_on_sortie = []
+                for f15 in f_15s:
+                    f15.refuel()
+                while len(f_15s_on_sortie) < 9:
+                    if f_15s[-1].take_off():
+                        f_15s_on_sortie.append(f_15s.pop())
+                    else:
+                        f_15s = [f_15s.pop()] + f_15s
+
+            turn += 1
+            ready_wpn_sys: list[WeaponSystem] = []
+
+            for wpn_sys in mlrs + ddg + f_15s_on_sortie:
+                if wpn_sys.ready():
+                    ready_wpn_sys.append(wpn_sys)
+                else:
+                    wpn_sys.reload()
+
+            target_pairings = targeting(ready_wpn_sys, undestroyed_targets)
+
+            hits, miss, duds, destroyed, f_15_down, record = weapon_effects(target_pairings)
+
+            destroyed_targets = destroyed_targets + destroyed
+            print("destroyed targets this round:")
+            print(destroyed)
+            for target in destroyed:
+                del(undestroyed_targets[undestroyed_targets.index(target)])
+
+            destroyed_f_15s = destroyed_f_15s + f_15_down
+
+            for f15 in f_15_down:
+                del(f_15s_on_sortie[f_15s_on_sortie.index(f15[0])])
+
+
+            f15_active = f_15s_on_sortie[:]
+            for f15 in f15_active:
+                if f15.empty():
+                    f15.refuel()
+                    f_15s = [f15] + f_15s
+                    del(f_15s_on_sortie[f_15s_on_sortie.index(f15)])
+
+            output = []
+            for line in record:
+                out = [str(turn)]
+                for element in line:
+                    out.append(str(element))
+                output.append(out)
+            writer.writerows(output)
+
+
+
+        # 1. grab ready weapons
+        # 1a. reload unready weapons
+        # 2. assign ready to targets
+        # 3. get results
+        # 4. update target list
+        # 5. remove destroyed f-15s
+        # 6. move f-15s out of fuel to the back of the list
+        # 7. after n turns, add in more f-15s
+        # 8. put results into a file
