@@ -153,6 +153,7 @@ class WeaponSystem(SimEntity):
         else:
             cd_factor = 0
 
+        #return(jkw_factor + reliability_factor + cd_factor)
         return(cost_factor + jkw_factor + reliability_factor + cd_factor)
 
 
@@ -578,17 +579,31 @@ def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]):
 
     return([hits,miss,duds,destroyed,f_15_down,turn_record])
 
-def scenario_1():
+def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10):
+    if scenario == 1:
+        file = "./output/scenario_1_"+weapon+" "+str(datetime.now())+".csv"
+        record_format = ["run","turn", "wpn sys", "tgt", "wpn", "dud",
+                         "hit", "f15_fly", "f15_ada", "f15_engage"]
+        with open(file, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(record_format)
+
+        for i in range(n):
+            scenario_1(weapon, file, i+1)
+    elif scenario == 2:
+        pass
+    else:
+        print("Scenario must be 1 or 2, and Weapon must be ATACM, PRSM1 or PRSM2")
+
+def scenario_1(mlrs_type: str, filename: str, run: int = 1):
 
     """ Execute scenario one. This is the main loop with all bookkeeping.
-
-    I'll put prints here to be able to extract data.
 
     """
 
     # Load all entities
     weapons: dict[str, Weapon] = load_weapons("./wpn_stats.csv")
-    mlrs: list[WeaponSystem] = load_mlrs("./MLRS_BN_lat_lon_10.csv", weapons)
+    mlrs: list[WeaponSystem] = load_mlrs("./"+mlrs_type+".csv", weapons)
     ddg: list[WeaponSystem] = load_ddg("./ddg.csv", weapons)
     targets: list[Target] = load_targets("./target_lat_lon.csv")
     sams, sam_radars = load_sams("./sams.csv")
@@ -602,82 +617,83 @@ def scenario_1():
 
     undestroyed_targets = targets + sams + sam_radars
     destroyed_targets = []
+    remaining_sams = sams
 
     turn = 0
 
-    filename = "./output/scenario_1_ATACM"+str(datetime.now())
+    start_time = datetime.now()
 
-    record_format = ["turn", "wpn sys", "tgt", "wpn", "dud", "hit",
-                     "f15_fly", "f15_ada", "f15_engage"]
+    output = []
 
-    with open(filename, "w") as f:
-        writer = csv.writer(f)
-        writer.writerow(record_format)
+    while len(undestroyed_targets):
 
-        while len(undestroyed_targets):
+        print("Turn {turn}".format(turn = turn + 1))
+        print("Targets Remaining: {left}".format(left = len(undestroyed_targets)))
 
-            print("Turn {turn}".format(turn = turn + 1))
-            print("Targets Remaining: {left}".format(left = len(undestroyed_targets)))
-
-            if turn%6 == 0:
-                f_15s = f_15s_on_sortie + f_15s
-                f_15s_on_sortie = []
-                for f15 in f_15s:
-                    f15.refuel()
-                while len(f_15s_on_sortie) < 9:
-                    if f_15s[-1].take_off():
-                        f_15s_on_sortie.append(f_15s.pop())
-                    else:
-                        f_15s = [f_15s.pop()] + f_15s
-
-            turn += 1
-            ready_wpn_sys: list[WeaponSystem] = []
-
-            for wpn_sys in mlrs + ddg + f_15s_on_sortie:
-                if wpn_sys.ready():
-                    ready_wpn_sys.append(wpn_sys)
+        if turn%6 == 0:
+            print("Update F-15s")
+            f_15s = f_15s_on_sortie + f_15s
+            f_15s_on_sortie = []
+            for f15 in f_15s:
+                f15.refuel()
+            while len(f_15s_on_sortie) < 9:
+                if f_15s[-1].take_off():
+                    f_15s_on_sortie.append(f_15s.pop())
                 else:
-                    wpn_sys.reload()
+                    f_15s = [f_15s.pop()] + f_15s
+            print("F-15s on sortie: ", f_15s_on_sortie)
 
-            target_pairings = targeting(ready_wpn_sys, undestroyed_targets)
+        turn += 1
+        ready_wpn_sys: list[WeaponSystem] = []
 
-            hits, miss, duds, destroyed, f_15_down, record = weapon_effects(target_pairings)
+        for wpn_sys in mlrs + ddg + f_15s_on_sortie:
+            if wpn_sys.ready():
+                ready_wpn_sys.append(wpn_sys)
+            else:
+                wpn_sys.reload()
 
-            destroyed_targets = destroyed_targets + destroyed
-            print("destroyed targets this round:")
-            print(destroyed)
-            for target in destroyed:
-                del(undestroyed_targets[undestroyed_targets.index(target)])
+        target_pairings = targeting(ready_wpn_sys, undestroyed_targets)
 
-            destroyed_f_15s = destroyed_f_15s + f_15_down
+        hits, miss, duds, destroyed, f_15_down, record = weapon_effects(target_pairings)
 
-            for f15 in f_15_down:
-                del(f_15s_on_sortie[f_15s_on_sortie.index(f15[0])])
+        destroyed_targets = destroyed_targets + destroyed
 
+        print("destroyed targets this round:")
+        print(destroyed)
+        for target in destroyed:
+            del(undestroyed_targets[undestroyed_targets.index(target)])
 
-            f15_active = f_15s_on_sortie[:]
-            for f15 in f15_active:
-                if f15.empty():
-                    f15.refuel()
-                    f_15s = [f15] + f_15s
-                    del(f_15s_on_sortie[f_15s_on_sortie.index(f15)])
+        # Determine remaining SAM sites
+        remaining_sams = []
+        for target in undestroyed_targets:
+            if target.type == "SAM":
+                remaining_sams.append(target)
 
-            output = []
-            for line in record:
-                out = [str(turn)]
-                for element in line:
-                    out.append(str(element))
-                output.append(out)
-            writer.writerows(output)
+        # Remove F-15s that were shot down
+        destroyed_f_15s = destroyed_f_15s + f_15_down
+        for f15 in f_15_down:
+            del(f_15s_on_sortie[f_15s_on_sortie.index(f15[0])])
 
+        # Have any F-15s out of fuel land to refuel
+        f15_active = f_15s_on_sortie[:]
+        for f15 in f15_active:
+            if f15.empty():
+                f15.refuel()
+                f_15s = [f15] + f_15s
+                del(f_15s_on_sortie[f_15s_on_sortie.index(f15)])
 
+        # Update the list of SAMS F-15s are checking against
+        for f15 in f_15s + f_15s_on_sortie:
+            f15.sams = remaining_sams
 
-        # 1. grab ready weapons
-        # 1a. reload unready weapons
-        # 2. assign ready to targets
-        # 3. get results
-        # 4. update target list
-        # 5. remove destroyed f-15s
-        # 6. move f-15s out of fuel to the back of the list
-        # 7. after n turns, add in more f-15s
-        # 8. put results into a file
+        # Build output that will be written as csv file
+        for line in record:
+            out = [str(run),str(turn)]
+            for element in line:
+                out.append(str(element))
+            output.append(out)
+
+    print("Runtime: ",str(datetime.now()-start_time))
+    with open(filename, "a") as f:
+        writer = csv.writer(f)
+        writer.writerows(output)
