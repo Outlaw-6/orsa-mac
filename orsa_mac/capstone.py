@@ -153,8 +153,8 @@ class WeaponSystem(SimEntity):
         else:
             cd_factor = 0
 
-        #return(jkw_factor + reliability_factor + cd_factor)
-        return(cost_factor + jkw_factor + reliability_factor + cd_factor)
+        return(jkw_factor + reliability_factor + cd_factor)
+        #return(cost_factor + jkw_factor + reliability_factor + cd_factor)
 
 
     def range(self, weapon: int) -> float:
@@ -170,6 +170,7 @@ class WeaponSystem(SimEntity):
             if self.ammo[weapon] < 1:
                 del(self.ammo[weapon])
                 del(self.weapons[weapon])
+            self.rounds_until_reload =- 1
             return(True)
 
 
@@ -313,6 +314,7 @@ class F15(WeaponSystem):
 
     def refuel(self):
         self.update_location(self.original_location)
+        self.rounds_until_reload = self.time_to_reload
         self.fuel_dist = 1250
 
 
@@ -524,7 +526,7 @@ def targeting(wpn_systems: list[WeaponSystem],
     return(results)
 
 
-def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]):
+def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]) -> list:
     destroyed: list[Target] = []
     hits: list[tuple[WeaponSystem, Target, Weapon]] = []
     miss: list[tuple[WeaponSystem, Target, Weapon]] = []
@@ -579,23 +581,31 @@ def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]):
 
     return([hits,miss,duds,destroyed,f_15_down,turn_record])
 
-def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10):
+
+def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10) -> None:
     if scenario == 1:
-        file = "./output/scenario_1_"+weapon+" "+str(datetime.now())+".csv"
-        record_format = ["run","turn", "wpn sys", "tgt", "wpn", "dud",
-                         "hit", "f15_fly", "f15_ada", "f15_engage"]
+        file = ("./output/scenario_1_"+str(n)+"_runs "+weapon
+                +" "+str(datetime.now())+".csv")
+        record_format = ["run", "turn", "wpn sys", "tgt", "wpn", "dud",
+                         "hit", "f15_fly", "f15_ada", "f15_engage",
+                         "cost", "cd"]
         with open(file, "w") as f:
             writer = csv.writer(f)
             writer.writerow(record_format)
 
+        print("Starting Main Loop")
+        start_time = datetime.now()
+        random.seed(123)
         for i in range(n):
             scenario_1(weapon, file, i+1)
+        print("Done. Total time: ", str(datetime.now()-start_time))
     elif scenario == 2:
         pass
     else:
         print("Scenario must be 1 or 2, and Weapon must be ATACM, PRSM1 or PRSM2")
 
-def scenario_1(mlrs_type: str, filename: str, run: int = 1):
+
+def scenario_1(mlrs_type: str, filename: str, run: int = 1) -> None:
 
     """ Execute scenario one. This is the main loop with all bookkeeping.
 
@@ -624,10 +634,10 @@ def scenario_1(mlrs_type: str, filename: str, run: int = 1):
     start_time = datetime.now()
 
     output = []
-
+
     while len(undestroyed_targets):
 
-        print("Turn {turn}".format(turn = turn + 1))
+        print("Run ", run, " Turn ", turn + 1)
         print("Targets Remaining: {left}".format(left = len(undestroyed_targets)))
 
         if turn%6 == 0:
@@ -657,7 +667,7 @@ def scenario_1(mlrs_type: str, filename: str, run: int = 1):
         hits, miss, duds, destroyed, f_15_down, record = weapon_effects(target_pairings)
 
         destroyed_targets = destroyed_targets + destroyed
-
+
         print("destroyed targets this round:")
         print(destroyed)
         for target in destroyed:
@@ -665,9 +675,12 @@ def scenario_1(mlrs_type: str, filename: str, run: int = 1):
 
         # Determine remaining SAM sites
         remaining_sams = []
+        remaining_sam_radars = []
         for target in undestroyed_targets:
             if target.type == "SAM":
                 remaining_sams.append(target)
+            if target.type == "SAMR":
+                remaining_sam_radars.append(target)
 
         # Remove F-15s that were shot down
         destroyed_f_15s = destroyed_f_15s + f_15_down
@@ -689,8 +702,32 @@ def scenario_1(mlrs_type: str, filename: str, run: int = 1):
         # Build output that will be written as csv file
         for line in record:
             out = [str(run),str(turn)]
-            for element in line:
-                out.append(str(element))
+            wpn_sys: WeaponSystem
+            wpn: Weapon
+            tgt: Target
+            wpn_sys,tgt,wpn,dud,hit,fly,ada,engage = line
+
+            out.append(str(wpn_sys))
+            out.append(str(tgt))
+            out.append(str(wpn))
+            out.append(str(dud))
+            out.append(str(hit))
+            out.append(str(fly))
+            out.append(str(ada))
+            out.append(str(engage))
+            out.append(str(wpn.cost))
+
+            if hit:
+                if wpn.area(tgt) > tgt.area:
+                    out.append(str(wpn.area(tgt) - tgt.area))
+                else:
+                    out.append(str(None))
+            else:
+                if tgt.type == "AF" or tgt.type == "House":
+                    out.append(str(None))
+                else:
+                    out.append(str(wpn.area(tgt)))
+
             output.append(out)
 
     print("Runtime: ",str(datetime.now()-start_time))
