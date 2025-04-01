@@ -4,6 +4,8 @@ import csv
 from datetime import datetime
 import math
 import random
+import multiprocessing
+import os
 import geopy.distance as gd
 import scipy.optimize as opt
 
@@ -583,6 +585,8 @@ def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]) -> list:
 
 
 def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10) -> None:
+    #lock = threading.Lock()
+    lock = multiprocessing.Lock()
     if scenario == 1:
         file = ("./output/scenario_1_"+str(n)+"_runs "+weapon
                 +" "+str(datetime.now())+".csv")
@@ -595,9 +599,36 @@ def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10) -> None:
 
         print("Starting Main Loop")
         start_time = datetime.now()
+
+        processes = []
+
         random.seed(123)
-        for i in range(n):
-            scenario_1(weapon, file, i+1)
+
+        iteration = 1
+        processors = os.process_cpu_count()
+
+        if processors:
+            while n > processors:
+                for _ in range(processors):
+                    p = multiprocessing.Process(target = scenario_1, args = (weapon, file, lock, iteration))
+                    processes.append(p)
+                    p.start()
+                    iteration += 1
+                for p in processes:
+                    p.join()
+                n -= processors
+                processes = []
+
+            for _ in range(n):
+                p = multiprocessing.Process(target = scenario_1, args = (weapon, file, lock, iteration))
+                processes.append(p)
+                p.start()
+                iteration += 1
+            for p in processes:
+                p.join()
+        else:
+            for i in range(n):
+                scenario_1(weapon,file,lock,i)
         print("Done. Total time: ", str(datetime.now()-start_time))
     elif scenario == 2:
         pass
@@ -605,7 +636,7 @@ def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10) -> None:
         print("Scenario must be 1 or 2, and Weapon must be ATACM, PRSM1 or PRSM2")
 
 
-def scenario_1(mlrs_type: str, filename: str, run: int = 1) -> None:
+def scenario_1(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
 
     """ Execute scenario one. This is the main loop with all bookkeeping.
 
@@ -731,6 +762,10 @@ def scenario_1(mlrs_type: str, filename: str, run: int = 1) -> None:
             output.append(out)
 
     print("Runtime: ",str(datetime.now()-start_time))
-    with open(filename, "a") as f:
-        writer = csv.writer(f)
-        writer.writerows(output)
+    lock.acquire()
+    try:
+        with open(filename, "a") as f:
+            writer = csv.writer(f)
+            writer.writerows(output)
+    finally:
+        lock.release()
