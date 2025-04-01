@@ -3,7 +3,7 @@
 :ID:       2e7a76a2-d48c-4695-a755-f38618d24ed5
 :END:
 
-* [ ] What still needs doing [3/8]:
+* [ ] What still needs doing [7/8]:
 :PROPERTIES:
 :ID:       1da0159e-7a23-4d84-89a2-db6f66fe47ab
 :END:
@@ -40,7 +40,7 @@
     - [X] Reliability
     - [X] JKW Probability by target type
   - [X] Code to eat it
-** [ ] Enumerate target types
+** [X] Enumerate target types
 :PROPERTIES:
 :ID:       e24720f8-f379-496c-b4e3-323be3f2f6c6
 :END:
@@ -54,15 +54,15 @@ I'm almost there -- just need to feed the array's I've built into a linear solve
 :PROPERTIES:
 :ID:       35482981-40cb-4ba6-83e9-f600798b69c4
 :END:
-** [ ] Update target and munitions list
+** [X] Update target and munitions list
 :PROPERTIES:
 :ID:       02bb1243-9903-49af-b69b-edde9fbe2ecf
 :END:
-** [ ] Turn-by-turn main loop
+** [X] Turn-by-turn main loop
 :PROPERTIES:
 :ID:       14453abc-7cd5-4e75-822c-b6e558166f1a
 :END:
-** [ ] Instrumentation to record what happens in the targeting and sim
+** [X] Instrumentation to record what happens in the targeting and sim
 :PROPERTIES:
 :ID:       81648e9a-4957-4135-8d5a-a3c3ed6cf673
 :END:
