@@ -1,0 +1,101 @@
+﻿type,name,radius,priority,moving,density
+Troop,Stationary Technical 1,6,0,FALSE,3
+Troop,Stationary Technical 2,6,0,FALSE,3
+Troop,Stationary Technical 3,6,0,FALSE,3
+Troop,Stationary Technical 4,6,0,FALSE,3
+Troop,Stationary Technical 5,6,0,FALSE,3
+Troop,Stationary Technical 6,6,0,FALSE,3
+Troop,Stationary Technical 7,6,0,FALSE,3
+Troop,Stationary Technical 8,6,0,FALSE,3
+Troop,Stationary Technical 9,6,0,FALSE,3
+Troop,Stationary Technical 10,6,0,FALSE,2
+Troop,Stationary Technical 11,6,0,FALSE,2
+Troop,Stationary Technical 12,6,0,FALSE,2
+Troop,Stationary Technical 13,6,0,FALSE,2
+Troop,Stationary Technical 14,6,0,FALSE,2
+Troop,Stationary Technical 15,6,0,FALSE,2
+Troop,Stationary Technical 16,6,0,FALSE,2
+Troop,Stationary Technical 17,6,0,FALSE,2
+Troop,Stationary Technical 18,6,0,FALSE,1
+Troop,Stationary Technical 19,6,0,FALSE,1
+Troop,Stationary Technical 20,6,0,FALSE,1
+Troop,Stationary Technical 21,6,0,FALSE,1
+Troop,Stationary Technical 22,6,0,FALSE,1
+Troop,Troops in Contact 1,200,2,FALSE,3
+Troop,Troops in Contact 2,200,2,FALSE,3
+Troop,Troops in Contact 3,200,2,FALSE,3
+Troop,Troops in Contact 4,200,2,FALSE,3
+Troop,Troops in Contact 5,200,2,FALSE,3
+Troop,Troops in Contact 6,200,2,FALSE,3
+Troop,Troops in Contact 7,200,2,FALSE,3
+Troop,Troops in Contact 8,200,2,FALSE,3
+Troop,Troops in Contact 9,200,2,FALSE,2
+Troop,Troops in Contact 10,200,2,FALSE,2
+Troop,Troops in Contact 11,200,2,FALSE,2
+Troop,Troops in Contact 12,200,2,FALSE,2
+Troop,Troops in Contact 13,200,2,FALSE,2
+Troop,Troops in Contact 14,200,2,FALSE,2
+Troop,Troops in Contact 15,200,2,FALSE,2
+Troop,Troops in Contact 16,200,2,FALSE,1
+Troop,Troops in Contact 17,200,2,FALSE,1
+Troop,Troops in Contact 18,200,2,FALSE,1
+Troop,Troops in Contact 19,200,2,FALSE,1
+Troop,Troops in Contact 20,200,2,FALSE,1
+House,Stationary HPT 1,50,1,FALSE,3
+House,Stationary HPT 2,50,1,FALSE,3
+House,Stationary HPT 3,50,1,FALSE,3
+House,Stationary HPT 4,50,1,FALSE,3
+House,Stationary HPT 5,50,1,FALSE,3
+House,Stationary HPT 6,50,1,FALSE,3
+House,Stationary HPT 7,50,1,FALSE,3
+House,Stationary HPT 8,50,1,FALSE,2
+House,Stationary HPT 9,50,1,FALSE,2
+House,Stationary HPT 10,50,1,FALSE,2
+House,Stationary HPT 11,50,1,FALSE,2
+House,Stationary HPT 12,50,1,FALSE,2
+House,Stationary HPT 13,50,1,FALSE,2
+House,Stationary HPT 14,50,1,FALSE,2
+House,Stationary HPT 15,50,1,FALSE,1
+House,Stationary HPT 16,50,1,FALSE,1
+House,Stationary HPT 17,50,1,FALSE,1
+House,Stationary HPT 18,50,1,FALSE,1
+Troop,Moving Technical 1,6,0,TRUE,3
+Troop,Moving Technical 2,6,0,TRUE,3
+Troop,Moving Technical 3,6,0,TRUE,3
+Troop,Moving Technical 4,6,0,TRUE,3
+Troop,Moving Technical 5,6,0,TRUE,3
+Troop,Moving Technical 6,6,0,TRUE,3
+Troop,Moving Technical 7,6,0,TRUE,3
+Troop,Moving Technical 8,6,0,TRUE,2
+Troop,Moving Technical 9,6,0,TRUE,2
+Troop,Moving Technical 10,6,0,TRUE,2
+Troop,Moving Technical 11,6,0,TRUE,2
+Troop,Moving Technical 12,6,0,TRUE,2
+Troop,Moving Technical 13,6,0,TRUE,2
+Troop,Moving Technical 14,6,0,TRUE,2
+Troop,Moving Technical 15,6,0,TRUE,2
+Storage,Troops in Contact Fortified 1,100,2,FALSE,3
+Storage,Troops in Contact Fortified 2,100,2,FALSE,3
+Storage,Troops in Contact Fortified 3,100,2,FALSE,3
+Storage,Troops in Contact Fortified 4,100,2,FALSE,3
+Storage,Troops in Contact Fortified 5,100,2,FALSE,3
+Storage,Troops in Contact Fortified 6,100,2,FALSE,2
+Storage,Troops in Contact Fortified 7,100,2,FALSE,2
+Storage,Troops in Contact Fortified 8,100,2,FALSE,2
+Storage,Troops in Contact Fortified 9,100,2,FALSE,2
+Storage,Troops in Contact Fortified 10,100,2,FALSE,2
+Troop,Moving HPT 1,6,1,TRUE,3
+Troop,Moving HPT 2,6,1,TRUE,3
+Troop,Moving HPT 3,6,1,TRUE,3
+Troop,Moving HPT 4,6,1,TRUE,3
+Troop,Moving HPT 5,6,1,TRUE,3
+Troop,Moving HPT 6,6,1,TRUE,3
+Troop,Moving HPT 7,6,1,TRUE,3
+Troop,Moving HPT 8,6,1,TRUE,3
+Troop,Moving HPT 9,6,1,TRUE,2
+Troop,Moving HPT 10,6,1,TRUE,2
+Troop,Moving HPT 11,6,1,TRUE,2
+Troop,Moving HPT 12,6,1,TRUE,2
+Troop,Moving HPT 13,6,1,TRUE,2
+Troop,Moving HPT 14,6,1,TRUE,2
+Troop,Moving HPT 15,6,1,TRUE,2

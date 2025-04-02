@@ -6,6 +6,7 @@ import math
 import random
 import multiprocessing
 import os
+from typing import Sequence
 import geopy.distance as gd
 import scipy.optimize as opt
 
@@ -64,6 +65,45 @@ class Target(SimEntity):
 
     def __repr__(self):
         return(self.name)
+
+
+class TimeSensitiveTarget(Target):
+
+    """A Time Sensitive target in the sim. Used in Scenario 2.
+
+    """
+
+    def __init__(self,
+                 type: str,
+                 name: str,
+                 location: tuple[float, float],
+                 radius: int,
+                 priority: int,
+                 moving: bool,
+                 density: int):
+        self.location: tuple[float, float] = location
+        self.area: float = radius ** 2 * math.pi
+        self.priority: int = priority
+        self.radius: int = radius
+        self.name: str = name
+        self.type: str = type
+        self.moving: bool = moving
+        self.density: int = density
+
+    def stop(self) -> bool:
+        self.moving = random.random() < 0.5
+        return(self.moving)
+
+    turns_seen: int = 0
+
+    def update_seen(self) -> None:
+        self.turns_seen += 1
+
+    def target_down(self) -> None:
+        self.turns_seen = 0
+
+    def is_moving(self) -> bool:
+        return(self.moving)
 
 
 
@@ -146,7 +186,7 @@ class WeaponSystem(SimEntity):
 
     def weight(self, tgt: Target, weapon: int) -> float:
         wpn = self.weapons[weapon]
-        cost_factor = wpn.cost/self.highest_cost
+        #cost_factor = wpn.cost/self.highest_cost
         jkw_factor = (1-wpn.jkw(tgt))
         reliability_factor = (1-wpn.reliability)
         burst_delta = (wpn.area(tgt) - tgt.area)/wpn.area(tgt)
@@ -253,8 +293,6 @@ class F15(WeaponSystem):
         for sam in self.sams:
             if sam.distance(obj) < 250:
                 return(True)
-            else:
-                return(False)
         return(False)
 
     def take_off(self) -> bool:
@@ -394,6 +432,54 @@ def load_targets(target_csv: str) -> list[Target]:
                                   int(radius),int(priority)))
     return(targets)
 
+def load_tst(target_csv: str) -> list[TimeSensitiveTarget]:
+
+    """Loads the time-sensitive targets into the sim.
+
+    Their locations are randomly generated along the equator
+    with 80 within 300km of 0,0 and 20 between 300-500km.
+
+    """
+
+    def lon_far() -> float:
+        return(2.6979 + random.random() * 1.7986)
+
+    def lon_near() -> float:
+        return(random.random() * 2.6979)
+
+    targets: list[TimeSensitiveTarget] = []
+    near, far = 0, 0
+    with open(target_csv, mode="r") as f:
+        csv_tgts = list(csv.reader(f))
+        for line in csv_tgts[1:]:
+            type,name,radius,priority,moving,density = line
+            lat: float = 0
+            near_full = near >= 80
+            far_full = far >= 20
+
+            if random.random() < 0.8:
+                if near_full:
+                    lon = lon_far()
+                    far += 1
+                else:
+                    lon = lon_near()
+                    near += 1
+            else:
+                if far_full:
+                    lon = lon_near()
+                    near += 1
+                else:
+                    lon = lon_far()
+                    far += 1
+            targets.append(TimeSensitiveTarget(type,
+                                               name,
+                                               (lat,lon),
+                                               int(radius),
+                                               int(priority),
+                                               moving == "TRUE",
+                                               int(density)))
+    return(targets)
+
     # Load SAMS
 def load_sams(sam_csv: str) -> list[list[Target]]:
     sams: list[Target] = []
@@ -414,7 +500,7 @@ def load_sams(sam_csv: str) -> list[list[Target]]:
             while (gd.great_circle((lat,lon),(new_lat,new_lon)).km > 50):
                 new_lat = lat - 0.5 + random.random()
                 new_lon = lon - 0.5 + random.random()
-            sams.append(Target("SAM","SAM " + str(i),
+            sams.append(Target("SAM","SAM " + str(i+1),
                                (new_lat, new_lon), radius, priority))
     return([sams,sam_radars])
 
@@ -446,8 +532,8 @@ def load_f_15s(usaf_csv: str,
     return(f_15s)
 
 
-def targeting(wpn_systems: list[WeaponSystem],
-              tgts: list[Target]) -> list[tuple[WeaponSystem, Target, int]]:
+def targeting(wpn_systems: Sequence[WeaponSystem],
+              tgts: Sequence[Target]) -> list[tuple[WeaponSystem, Target, int]]:
 
     """Builds a linear program to solve for optimal weapon assignment.
 
@@ -493,7 +579,7 @@ def targeting(wpn_systems: list[WeaponSystem],
                     coefficients[index] = wpn_sys.weight(tgt, k)
                 else:
                     constraints_lhs[(n_wpns+j)][index] = 0
-                    coefficients[index] = 2*m
+                    coefficients[index] = 5*m
                 index += 1
 
     # Add target constraint RHS
@@ -506,10 +592,7 @@ def targeting(wpn_systems: list[WeaponSystem],
         constraints_lhs[(n_wpns+j)][index] = -m
 
         # Check priority. High priority doesn't get dummy node.
-        if (tgt.priority >= 1):
-            coefficients[index] = m
-        else:
-            coefficients[index] = 1
+        coefficients[index] = 2 + tgt.priority * m
         index += 1
 
     # Send to the Solver
@@ -585,55 +668,66 @@ def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]) -> list:
 
 
 def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10) -> None:
-    #lock = threading.Lock()
+
+    if not (weapon == "ATACM" or weapon == "PRSM1" or weapon == "PRSM2"):
+        print("Scenario must be 1 or 2, and Weapon must be ATACM, PRSM1 or PRSM2")
+        return(None)
+
     lock = multiprocessing.Lock()
-    if scenario == 1:
-        file = ("./output/scenario_1_"+str(n)+"_runs "+weapon
-                +" "+str(datetime.now())+".csv")
-        record_format = ["run", "turn", "wpn sys", "tgt", "wpn", "dud",
-                         "hit", "f15_fly", "f15_ada", "f15_engage",
-                         "cost", "cd"]
-        with open(file, "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(record_format)
 
-        print("Starting Main Loop")
-        start_time = datetime.now()
+    scenario_function: function
 
-        processes = []
+    match scenario:
+        case 1:
+            scenario_function = scenario_1
+        case 2:
+            scenario_function = scenario_2
+        case _:
+            print("Scenario must be 1 or 2, and Weapon must be ATACM, PRSM1 or PRSM2")
+            return(None)
 
-        random.seed(123)
+    file = ("./output/scenario_"+str(scenario)+"_"+str(n)+"_runs "+weapon
+            +" "+str(datetime.now())+".csv")
+    record_format = ["run", "turn", "wpn sys", "tgt", "wpn", "dud",
+                     "hit", "f15_fly", "f15_ada", "f15_engage",
+                     "cost", "cd"]
+    with open(file, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(record_format)
 
-        iteration = 1
-        processors = os.process_cpu_count()
+    print("Starting Main Loop")
+    start_time = datetime.now()
 
-        if processors:
-            while n > processors:
-                for _ in range(processors):
-                    p = multiprocessing.Process(target = scenario_1, args = (weapon, file, lock, iteration))
-                    processes.append(p)
-                    p.start()
-                    iteration += 1
-                for p in processes:
-                    p.join()
-                n -= processors
-                processes = []
+    processes = []
 
-            for _ in range(n):
-                p = multiprocessing.Process(target = scenario_1, args = (weapon, file, lock, iteration))
+    random.seed(123)
+
+    iteration = 1
+    processors = os.process_cpu_count()
+
+    if processors:
+        while n > processors:
+            for _ in range(processors):
+                p = multiprocessing.Process(target = scenario_function, args = (weapon, file, lock, iteration))
                 processes.append(p)
                 p.start()
                 iteration += 1
             for p in processes:
                 p.join()
-        else:
-            for i in range(n):
-                scenario_1(weapon,file,lock,i)
-        print("Done. Total time: ", str(datetime.now()-start_time))
-    elif scenario == 2:
-        pass
+            n -= processors
+            processes = []
+
+        for _ in range(n):
+            p = multiprocessing.Process(target = scenario_function, args = (weapon, file, lock, iteration))
+            processes.append(p)
+            p.start()
+            iteration += 1
+        for p in processes:
+            p.join()
     else:
-        print("Scenario must be 1 or 2, and Weapon must be ATACM, PRSM1 or PRSM2")
+        for i in range(n):
+            scenario_function(weapon,file,lock,i)
+    print("Done. Total time: ", str(datetime.now()-start_time))
 
 
 def scenario_1(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
@@ -695,7 +789,7 @@ def scenario_1(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
 
         target_pairings = targeting(ready_wpn_sys, undestroyed_targets)
 
-        hits, miss, duds, destroyed, f_15_down, record = weapon_effects(target_pairings)
+        _hits, _miss, _duds, destroyed, f_15_down, record = weapon_effects(target_pairings)
 
         destroyed_targets = destroyed_targets + destroyed
 
@@ -731,35 +825,7 @@ def scenario_1(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
             f15.sams = remaining_sams
 
         # Build output that will be written as csv file
-        for line in record:
-            out = [str(run),str(turn)]
-            wpn_sys: WeaponSystem
-            wpn: Weapon
-            tgt: Target
-            wpn_sys,tgt,wpn,dud,hit,fly,ada,engage = line
-
-            out.append(str(wpn_sys))
-            out.append(str(tgt))
-            out.append(str(wpn))
-            out.append(str(dud))
-            out.append(str(hit))
-            out.append(str(fly))
-            out.append(str(ada))
-            out.append(str(engage))
-            out.append(str(wpn.cost))
-
-            if hit:
-                if wpn.area(tgt) > tgt.area:
-                    out.append(str(wpn.area(tgt) - tgt.area))
-                else:
-                    out.append(str(None))
-            else:
-                if tgt.type == "AF" or tgt.type == "House":
-                    out.append(str(None))
-                else:
-                    out.append(str(wpn.area(tgt)))
-
-            output.append(out)
+        output.append(stats(record, run, turn))
 
     print("Runtime: ",str(datetime.now()-start_time))
     lock.acquire()
@@ -769,3 +835,131 @@ def scenario_1(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
             writer.writerows(output)
     finally:
         lock.release()
+
+def scenario_2(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
+
+    """ Execute scenario two. This is the main loop with all bookkeeping.
+
+    """
+
+    # Load all entities
+    weapons: dict[str, Weapon] = load_weapons("./wpn_stats.csv")
+    mlrs: list[WeaponSystem] = load_mlrs("./"+mlrs_type+"_2.csv", weapons)
+    ddg: list[WeaponSystem] = load_ddg("./ddg_2.csv", weapons)
+    targets: list[TimeSensitiveTarget] = load_tst("./tst.csv")
+    f_15s: list[F15] = load_f_15s("./usaf_2.csv", weapons, [])
+
+    f_15s.reverse()
+
+    destroyed_f_15s: list[F15] = []
+
+    f_15s_on_sortie: list[F15] = []
+
+    undestroyed_targets = targets
+    destroyed_targets = []
+
+    # TODO Make initial list of available targets
+
+    turn = 0
+
+    output = []
+
+    start_time = datetime.now()
+
+    while len(undestroyed_targets):
+
+        print("Run ", run, " Turn ", turn + 1)
+        print("Targets Remaining: {left}".format(left = len(undestroyed_targets)))
+
+        if turn%6 == 0:
+            print("Update F-15s")
+            f_15s = f_15s_on_sortie + f_15s
+            f_15s_on_sortie = []
+            for f15 in f_15s:
+                f15.refuel()
+            while len(f_15s_on_sortie) < 3:
+                if f_15s[-1].take_off():
+                    f_15s_on_sortie.append(f_15s.pop())
+                else:
+                    f_15s = [f_15s.pop()] + f_15s
+            print("F-15s on sortie: ", f_15s_on_sortie)
+
+        turn += 1
+        ready_wpn_sys: list[WeaponSystem] = []
+
+        for wpn_sys in mlrs + ddg + f_15s_on_sortie:
+            if wpn_sys.ready():
+                ready_wpn_sys.append(wpn_sys)
+            else:
+                wpn_sys.reload()
+
+        # TODO Build list of targets that appear each round.
+        # TODO Check if targets are moving. Visible non-moving get added to targeting
+
+        target_pairings = targeting(ready_wpn_sys, undestroyed_targets)
+
+        _hits, _miss, _duds, destroyed, f_15_down, record = weapon_effects(target_pairings)
+
+        destroyed_targets = destroyed_targets + destroyed
+
+        print("destroyed targets this round:")
+        print(destroyed)
+        for target in destroyed:
+            del(undestroyed_targets[undestroyed_targets.index(target)])
+
+        # Remove F-15s that were shot down
+        destroyed_f_15s = destroyed_f_15s + f_15_down
+        for f15 in f_15_down:
+            del(f_15s_on_sortie[f_15s_on_sortie.index(f15[0])])
+
+        # Have any F-15s out of fuel land to refuel
+        f15_active = f_15s_on_sortie[:]
+        for f15 in f15_active:
+            if f15.empty():
+                f15.refuel()
+                f_15s = [f15] + f_15s
+                del(f_15s_on_sortie[f_15s_on_sortie.index(f15)])
+
+        # TODO Check if moving targets stopped and if they go down.
+
+        # Build output that will be written as csv file
+        output.append(stats(record, run, turn))
+
+    print("Runtime: ",str(datetime.now()-start_time))
+    lock.acquire()
+    try:
+        with open(filename, "a") as f:
+            writer = csv.writer(f)
+            writer.writerows(output)
+    finally:
+        lock.release()
+
+def stats(record: list, run: int, turn: int) -> list[str]:
+    for line in record:
+        out = [str(run),str(turn)]
+        wpn_sys: WeaponSystem
+        wpn: Weapon
+        tgt: Target
+        wpn_sys,tgt,wpn,dud,hit,fly,ada,engage = line
+
+        out.append(str(wpn_sys))
+        out.append(str(tgt))
+        out.append(str(wpn))
+        out.append(str(dud))
+        out.append(str(hit))
+        out.append(str(fly))
+        out.append(str(ada))
+        out.append(str(engage))
+        out.append(str(wpn.cost))
+
+        if hit and not dud:
+            if wpn.area(tgt) > tgt.area:
+                out.append(str(wpn.area(tgt) - tgt.area))
+            else:
+                out.append(str(None))
+        elif not hit and not dud:
+            out.append(str(wpn.area(tgt)))
+        else:
+            out.append(str(None))
+
+    return(out)
