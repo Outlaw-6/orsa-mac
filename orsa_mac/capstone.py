@@ -9,6 +9,7 @@ import os
 from typing import Sequence
 import geopy.distance as gd
 import scipy.optimize as opt
+from scipy.stats import poisson
 
 """This is the main file for the Teem Juan ORSA-MAC Capstone Project.
 
@@ -46,13 +47,15 @@ class Target(SimEntity):
                  name: str,
                  location: tuple[float, float],
                  radius: int,
-                 priority: int):
+                 priority: int,
+                 density: int = 1):
         self.location: tuple[float, float] = location
         self.area: float = radius ** 2 * math.pi
         self.priority: int = priority
         self.radius: int = radius
         self.name: str = name
         self.type: str = type
+        self.density: int = density
 
     def __eq__(self, other):
         if isinstance(other, Target):
@@ -88,11 +91,12 @@ class TimeSensitiveTarget(Target):
         self.name: str = name
         self.type: str = type
         self.moving: bool = moving
+        self.moving_target: bool = moving
         self.density: int = density
 
     def stop(self) -> bool:
         self.moving = random.random() < 0.5
-        return(self.moving)
+        return(not self.moving)
 
     turns_seen: int = 0
 
@@ -101,6 +105,7 @@ class TimeSensitiveTarget(Target):
 
     def target_down(self) -> None:
         self.turns_seen = 0
+        self.moving = self.moving_target
 
     def is_moving(self) -> bool:
         return(self.moving)
@@ -677,20 +682,23 @@ def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10) -> None:
 
     scenario_function: function
 
+    record_format = ["run", "turn", "wpn sys", "tgt", "wpn", "dud",
+                     "hit", "f15_fly", "f15_ada", "f15_engage",
+                     "cost", "cd"]
+
     match scenario:
         case 1:
             scenario_function = scenario_1
         case 2:
             scenario_function = scenario_2
+            record_format.append("turns_seen")
         case _:
             print("Scenario must be 1 or 2, and Weapon must be ATACM, PRSM1 or PRSM2")
             return(None)
 
     file = ("./output/scenario_"+str(scenario)+"_"+str(n)+"_runs "+weapon
             +" "+str(datetime.now())+".csv")
-    record_format = ["run", "turn", "wpn sys", "tgt", "wpn", "dud",
-                     "hit", "f15_fly", "f15_ada", "f15_engage",
-                     "cost", "cd"]
+
     with open(file, "w") as f:
         writer = csv.writer(f)
         writer.writerow(record_format)
@@ -706,15 +714,15 @@ def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10) -> None:
     processors = os.process_cpu_count()
 
     if processors:
-        while n > processors:
-            for _ in range(processors):
+        while n > processors*4:
+            for _ in range(processors*4):
                 p = multiprocessing.Process(target = scenario_function, args = (weapon, file, lock, iteration))
                 processes.append(p)
                 p.start()
                 iteration += 1
             for p in processes:
                 p.join()
-            n -= processors
+            n -= processors*4
             processes = []
 
         for _ in range(n):
@@ -825,7 +833,7 @@ def scenario_1(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
             f15.sams = remaining_sams
 
         # Build output that will be written as csv file
-        output.append(stats(record, run, turn))
+        output = output + stats(record, run, turn)
 
     print("Runtime: ",str(datetime.now()-start_time))
     lock.acquire()
@@ -835,7 +843,7 @@ def scenario_1(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
             writer.writerows(output)
     finally:
         lock.release()
-
+
 def scenario_2(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
 
     """ Execute scenario two. This is the main loop with all bookkeeping.
@@ -855,21 +863,21 @@ def scenario_2(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
 
     f_15s_on_sortie: list[F15] = []
 
-    undestroyed_targets = targets
-    destroyed_targets = []
-
-    # TODO Make initial list of available targets
+    undestroyed_targets: list[TimeSensitiveTarget] = targets
+    unseen_targets: list[TimeSensitiveTarget] = undestroyed_targets[:]
+    destroyed_targets: list[TimeSensitiveTarget] = []
+    seen_targets: list[TimeSensitiveTarget] = []
 
     turn = 0
 
     output = []
 
     start_time = datetime.now()
-
+
     while len(undestroyed_targets):
 
         print("Run ", run, " Turn ", turn + 1)
-        print("Targets Remaining: {left}".format(left = len(undestroyed_targets)))
+        print("Targets Remaining: ", len(undestroyed_targets))
 
         if turn%6 == 0:
             print("Update F-15s")
@@ -893,10 +901,20 @@ def scenario_2(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
             else:
                 wpn_sys.reload()
 
-        # TODO Build list of targets that appear each round.
-        # TODO Check if targets are moving. Visible non-moving get added to targeting
+        # Build list of targets that appear each round.
+        mu = 5
+        for _ in range(poisson.rvs(mu,1)):
+            if len(unseen_targets):
+                seen_targets.append(
+                    unseen_targets.pop(random.randrange(len(unseen_targets))))
+                seen_targets[-1].update_seen()
+        # Check if targets are moving. Visible non-moving get added to targeting
+        available_targets: list[TimeSensitiveTarget] = []
+        for target in seen_targets:
+            if not target.is_moving():
+                available_targets.append(target)
 
-        target_pairings = targeting(ready_wpn_sys, undestroyed_targets)
+        target_pairings = targeting(ready_wpn_sys, available_targets)
 
         _hits, _miss, _duds, destroyed, f_15_down, record = weapon_effects(target_pairings)
 
@@ -906,6 +924,23 @@ def scenario_2(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
         print(destroyed)
         for target in destroyed:
             del(undestroyed_targets[undestroyed_targets.index(target)])
+            del(seen_targets[seen_targets.index(target)])
+
+        # Check if moving targets stopped and if they go down.
+        print("targets up:", len(seen_targets))
+        print(seen_targets)
+        targets_up = seen_targets[:]
+        for target in targets_up:
+            # If the target stops, do nothing -- it will go to next round.
+            if target.is_moving() and not target.stop():
+                if target.turns_seen > 3:
+                    target.target_down()
+                    unseen_targets.append(target)
+                    del(seen_targets[seen_targets.index(target)])
+                else:
+                    target.update_seen()
+            else:
+                target.update_seen()
 
         # Remove F-15s that were shot down
         destroyed_f_15s = destroyed_f_15s + f_15_down
@@ -920,10 +955,8 @@ def scenario_2(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
                 f_15s = [f15] + f_15s
                 del(f_15s_on_sortie[f_15s_on_sortie.index(f15)])
 
-        # TODO Check if moving targets stopped and if they go down.
-
         # Build output that will be written as csv file
-        output.append(stats(record, run, turn))
+        output = output + stats(record, run, turn)
 
     print("Runtime: ",str(datetime.now()-start_time))
     lock.acquire()
@@ -934,7 +967,10 @@ def scenario_2(mlrs_type: str, filename: str, lock, run: int = 1) -> None:
     finally:
         lock.release()
 
-def stats(record: list, run: int, turn: int) -> list[str]:
+
+def stats(record: list, run: int, turn: int) -> list[list[str]]:
+    output = []
+    out = []
     for line in record:
         out = [str(run),str(turn)]
         wpn_sys: WeaponSystem
@@ -954,12 +990,15 @@ def stats(record: list, run: int, turn: int) -> list[str]:
 
         if hit and not dud:
             if wpn.area(tgt) > tgt.area:
-                out.append(str(wpn.area(tgt) - tgt.area))
+                out.append(str((wpn.area(tgt) - tgt.area)*tgt.density))
             else:
                 out.append(str(None))
         elif not hit and not dud:
-            out.append(str(wpn.area(tgt)))
+            out.append(str(wpn.area(tgt)*tgt.density))
         else:
             out.append(str(None))
+        if isinstance(tgt, TimeSensitiveTarget):
+            out.append(str(tgt.turns_seen))
+        output.append(out)
 
-    return(out)
+    return(output)
