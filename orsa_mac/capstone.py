@@ -674,7 +674,7 @@ def weapon_effects(pairings: list[tuple[WeaponSystem, Target, int]]) -> list:
 
 def main(scenario: int = 1, weapon: str = "ATACM", n: int = 10) -> None:
 
-    if not (weapon == "ATACM" or weapon == "PRSM1" or weapon == "PRSM2"):
+    if not (weapon in ("ATACM", "PRSM1", "PRSM2")):
         print("Scenario must be 1 or 2, and Weapon must be ATACM, PRSM1 or PRSM2")
         return(None)
 
